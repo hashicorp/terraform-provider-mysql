@@ -13,8 +13,9 @@ import (
 )
 
 type providerConfiguration struct {
-	Conn          mysqlc.Conn
-	ServerVersion *version.Version
+	Conn                        mysqlc.Conn
+	DefaultAuthenticationPlugin string
+	ServerVersion               *version.Version
 }
 
 func Provider() terraform.ResourceProvider {
@@ -91,9 +92,15 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, err
 	}
 
+	authPlugin, err := defaultAuthenticationPlugin(conn)
+	if err != nil {
+		return nil, err
+	}
+
 	return &providerConfiguration{
-		Conn:          conn,
-		ServerVersion: ver,
+		Conn: conn,
+		DefaultAuthenticationPlugin: authPlugin,
+		ServerVersion:               ver,
 	}, nil
 }
 
@@ -113,4 +120,18 @@ func serverVersion(conn mysqlc.Conn) (*version.Version, error) {
 	}
 
 	return version.NewVersion(rows[0].Str(0))
+}
+
+func defaultAuthenticationPlugin(conn mysqlc.Conn) (string, error) {
+	stmtSQL := "SELECT @@default_authentication_plugin"
+	rows, _, err := conn.Query(stmtSQL)
+
+	if err != nil {
+		return "", err
+	}
+	if len(rows) == 0 {
+		return "", fmt.Errorf("%s returned an empty set", stmtSQL)
+	}
+
+	return rows[0].Str(0), nil
 }
