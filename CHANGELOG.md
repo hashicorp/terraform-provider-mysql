@@ -1,4 +1,9 @@
 ## 0.1.1 (Unreleased)
+
+BUG FIXES:
+
+* Fix grant option SQL Statement [GH-12]
+
 ## 0.1.0 (June 21, 2017)
 
 NOTES:
