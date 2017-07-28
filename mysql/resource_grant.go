@@ -72,7 +72,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	if d.Get("grant").(bool) {
-		stmtSQL = " WITH GRANT OPTION"
+		stmtSQL += " WITH GRANT OPTION"
 	}
 
 	log.Println("Executing statement:", stmtSQL)
