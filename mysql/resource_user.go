@@ -31,9 +31,19 @@ func resourceUser() *schema.Resource {
 			},
 
 			"password": &schema.Schema{
-				Type:      schema.TypeString,
-				Optional:  true,
-				Sensitive: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ConflictsWith: []string{"auth_plugin", "hash_string"},
+			},
+
+			"auth_plugin": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"hash_string": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 	}
@@ -47,8 +57,19 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	password := d.Get("password").(string)
+	authPlugin := d.Get("auth_plugin").(string)
+	hashString := d.Get("hash_string").(string)
+
 	if password != "" {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
+	}
+
+	if authPlugin != "" {
+		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED WITH '%s'", authPlugin)
+
+		if hashString != "" {
+			stmtSQL = stmtSQL + fmt.Sprintf(" AS '%s'", hashString)
+		}
 	}
 
 	log.Println("Executing statement:", stmtSQL)
@@ -66,25 +87,44 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	conf := meta.(*providerConfiguration)
 
-	if d.HasChange("password") {
-		_, newpw := d.GetChange("password")
+	if d.HasChange("password") || d.HasChange("auth_plugin") || d.HasChange("hash_string") {
 		var stmtSQL string
 
-		/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
-		ver, _ := version.NewVersion("5.7.6")
-		if conf.ServerVersion.LessThan(ver) {
-			stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
-				d.Get("user").(string),
-				d.Get("host").(string),
-				newpw.(string))
+		if _, hasPassword := d.GetOk("password"); hasPassword {
+			_, newPassword := d.GetChange("password")
+			ver, _ := version.NewVersion("5.7.6")
+
+			/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
+			if conf.ServerVersion.LessThan(ver) {
+				if d.HasChange("auth_plugin") || d.HasChange("hash_string") {
+					return fmt.Errorf(
+						"The 'auth_plugin' and 'hash_string' parameters are " +
+							"not supported on MySQL versions earlier than 5.7.6")
+				}
+
+				stmtSQL = fmt.Sprintf(
+					"SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
+					d.Get("user").(string),
+					d.Get("host").(string),
+					newPassword.(string))
+			} else {
+				stmtSQL = fmt.Sprintf(
+					"ALTER USER '%s'@'%s' IDENTIFIED WITH %s BY '%s'",
+					d.Get("user").(string),
+					d.Get("host").(string),
+					conf.DefaultAuthenticationPlugin,
+					newPassword.(string))
+			}
 		} else {
-			stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' IDENTIFIED BY '%s'",
+			stmtSQL = fmt.Sprintf(
+				"ALTER USER '%s'@'%s' IDENTIFIED WITH '%s' AS '%s'",
 				d.Get("user").(string),
 				d.Get("host").(string),
-				newpw.(string))
+				d.Get("auth_plugin").(string),
+				d.Get("hash_string").(string))
 		}
 
-		log.Println("Executing query:", stmtSQL)
+		log.Println("Executing statement:", stmtSQL)
 		_, _, err := conf.Conn.Query(stmtSQL)
 		if err != nil {
 			return err
