@@ -80,7 +80,7 @@ func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 			return fmt.Errorf("database still exists after destroy")
 		} else {
 			if mysqlErr, ok := err.(*mysql.MySQLError); ok {
-				if mysqlErr.Number == unknownDatabaseCode {
+				if mysqlErr.Number == unknownDatabaseErrCode {
 					return nil
 				}
 			}
