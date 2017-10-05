@@ -78,14 +78,15 @@ func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 		err := db.QueryRow("SHOW CREATE DATABASE terraform_acceptance_test").Scan(&name, &createSQL)
 		if err == nil {
 			return fmt.Errorf("database still exists after destroy")
-		} else {
-			if mysqlErr, ok := err.(*mysql.MySQLError); ok {
-				if mysqlErr.Number == unknownDatabaseErrCode {
-					return nil
-				}
-			}
-			return fmt.Errorf("got unexpected error: %s", err)
 		}
+
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+			if mysqlErr.Number == unknownDatabaseErrCode {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("got unexpected error: %s", err)
 	}
 }
 
