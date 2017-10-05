@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"testing"
@@ -76,15 +77,16 @@ func testAccUserExists(rn string) resource.TestCheckFunc {
 			return fmt.Errorf("user id not set")
 		}
 
-		conn := testAccProvider.Meta().(*providerConfiguration).Conn
+		db := testAccProvider.Meta().(*providerConfiguration).DB
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
-		rows, _, err := conn.Query(stmtSQL)
+		var count int
+		err := db.QueryRow(stmtSQL).Scan(&count)
 		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("expected 1 row reading user but got no rows")
+			}
 			return fmt.Errorf("error reading user: %s", err)
-		}
-		if len(rows) != 1 {
-			return fmt.Errorf("expected 1 row reading user but got %d", len(rows))
 		}
 
 		return nil
@@ -92,7 +94,7 @@ func testAccUserExists(rn string) resource.TestCheckFunc {
 }
 
 func testAccUserCheckDestroy(s *terraform.State) error {
-	conn := testAccProvider.Meta().(*providerConfiguration).Conn
+	db := testAccProvider.Meta().(*providerConfiguration).DB
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "mysql_user" {
@@ -101,11 +103,12 @@ func testAccUserCheckDestroy(s *terraform.State) error {
 
 		stmtSQL := fmt.Sprintf("SELECT user from mysql.user where CONCAT(user, '@', host) = '%s'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
-		rows, _, err := conn.Query(stmtSQL)
+		rows, err := db.Query(stmtSQL)
 		if err != nil {
 			return fmt.Errorf("error issuing query: %s", err)
 		}
-		if len(rows) != 0 {
+		defer rows.Close()
+		if rows.Next() {
 			return fmt.Errorf("user still exists after destroy")
 		}
 	}

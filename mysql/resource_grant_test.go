@@ -6,8 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	mysqlc "github.com/ziutek/mymysql/mysql"
-
+	"github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -47,22 +46,24 @@ func testAccPrivilegeExists(rn string, privilege string) resource.TestCheckFunc 
 		user := userhost[0]
 		host := userhost[1]
 
-		conn := testAccProvider.Meta().(*providerConfiguration).Conn
+		db := testAccProvider.Meta().(*providerConfiguration).DB
 		stmtSQL := fmt.Sprintf("SHOW GRANTS for '%s'@'%s'", user, host)
 		log.Println("Executing statement:", stmtSQL)
-		rows, _, err := conn.Query(stmtSQL)
+		rows, err := db.Query(stmtSQL)
 		if err != nil {
 			return fmt.Errorf("error reading grant: %s", err)
 		}
-
-		if len(rows) == 0 {
-			return fmt.Errorf("grant not found for '%s'@'%s'", user, host)
-		}
+		defer rows.Close()
 
 		privilegeFound := false
-		for _, row := range rows {
-			log.Printf("Result Row: %s", row[0])
-			privIndex := strings.Index(string(row[0].([]byte)), privilege)
+		for rows.Next() {
+			var grants string
+			err = rows.Scan(&grants)
+			if err != nil {
+				return fmt.Errorf("failed to read grant for '%s'@'%s': %s", user, host, err)
+			}
+			log.Printf("Result Row: %s", grants)
+			privIndex := strings.Index(grants, privilege)
 			if privIndex != -1 {
 				privilegeFound = true
 			}
@@ -77,7 +78,7 @@ func testAccPrivilegeExists(rn string, privilege string) resource.TestCheckFunc 
 }
 
 func testAccGrantCheckDestroy(s *terraform.State) error {
-	conn := testAccProvider.Meta().(*providerConfiguration).Conn
+	db := testAccProvider.Meta().(*providerConfiguration).DB
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "mysql_grant" {
@@ -91,18 +92,19 @@ func testAccGrantCheckDestroy(s *terraform.State) error {
 
 		stmtSQL := fmt.Sprintf("SHOW GRANTS for '%s'@'%s'", user, host)
 		log.Println("Executing statement:", stmtSQL)
-		rows, _, err := conn.Query(stmtSQL)
+		rows, err := db.Query(stmtSQL)
 		if err != nil {
-			if mysqlErr, ok := err.(*mysqlc.Error); ok {
-				if mysqlErr.Code == mysqlc.ER_NONEXISTING_GRANT {
+			if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+				if mysqlErr.Number == nonexistingGrantErrCode {
 					return nil
 				}
 			}
 
 			return fmt.Errorf("error reading grant: %s", err)
 		}
+		defer rows.Close()
 
-		if len(rows) != 0 {
+		if rows.Next() {
 			return fmt.Errorf("grant still exists for'%s'@'%s'", user, host)
 		}
 	}

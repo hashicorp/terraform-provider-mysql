@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+const nonexistingGrantErrCode = 1141
+
 func resourceGrant() *schema.Resource {
 	return &schema.Resource{
 		Create: CreateGrant,
@@ -54,7 +56,7 @@ func resourceGrant() *schema.Resource {
 }
 
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	// create a comma-delimited string of privileges
 	var privileges string
@@ -76,7 +78,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Println("Executing statement:", stmtSQL)
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -88,7 +90,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadGrant(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'",
 		d.Get("user").(string),
@@ -96,15 +98,17 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	_, _, err := conn.Query(stmtSQL)
+	rows, err := db.Query(stmtSQL)
 	if err != nil {
 		d.SetId("")
+	} else {
+		rows.Close()
 	}
 	return nil
 }
 
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.* FROM '%s'@'%s'",
 		d.Get("database").(string),
@@ -112,7 +116,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	log.Println("Executing statement:", stmtSQL)
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Query(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -123,7 +127,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	log.Println("Executing statement:", stmtSQL)
-	_, _, err = conn.Query(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}

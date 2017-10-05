@@ -1,19 +1,19 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/go-version"
-	mysqlc "github.com/ziutek/mymysql/mysql"
-	mysqlts "github.com/ziutek/mymysql/thrsafe"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
 
 type providerConfiguration struct {
-	Conn          mysqlc.Conn
+	DB            *sql.DB
 	ServerVersion *version.Version
 }
 
@@ -76,23 +76,20 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		proto = "unix"
 	}
 
-	// mysqlts is the thread-safe implementation of mymysql, so we can
-	// safely re-use the same connection between multiple parallel
+	// database/sql is the thread-safe by default, so we can
+	// safely re-use the same handle between multiple parallel
 	// operations.
-	conn := mysqlts.New(proto, "", endpoint, username, password)
 
-	err := conn.Connect()
-	if err != nil {
-		return nil, err
-	}
+	dataSourceName := fmt.Sprintf("%s:%s@%s(%s)/", username, password, proto, endpoint)
+	db, err := sql.Open("mysql", dataSourceName)
 
-	ver, err := serverVersion(conn)
+	ver, err := serverVersion(db)
 	if err != nil {
 		return nil, err
 	}
 
 	return &providerConfiguration{
-		Conn:          conn,
+		DB:            db,
 		ServerVersion: ver,
 	}, nil
 }
@@ -103,14 +100,16 @@ func quoteIdentifier(in string) string {
 	return fmt.Sprintf("`%s`", identQuoteReplacer.Replace(in))
 }
 
-func serverVersion(conn mysqlc.Conn) (*version.Version, error) {
-	rows, _, err := conn.Query("SELECT VERSION()")
+func serverVersion(db *sql.DB) (*version.Version, error) {
+	rows, err := db.Query("SELECT VERSION()")
 	if err != nil {
 		return nil, err
 	}
-	if len(rows) == 0 {
+	if !rows.Next() {
 		return nil, fmt.Errorf("SELECT VERSION() returned an empty set")
 	}
 
-	return version.NewVersion(rows[0].Str(0))
+	var versionString string
+	rows.Scan(&versionString)
+	return version.NewVersion(versionString)
 }

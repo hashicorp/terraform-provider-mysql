@@ -1,17 +1,19 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
 
-	mysqlc "github.com/ziutek/mymysql/mysql"
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 const defaultCharacterSetKeyword = "CHARACTER SET "
 const defaultCollateKeyword = "COLLATE "
+const unknownDatabaseErrCode = 1049
 
 func resourceDatabase() *schema.Resource {
 	return &schema.Resource{
@@ -43,12 +45,12 @@ func resourceDatabase() *schema.Resource {
 }
 
 func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := databaseConfigSQL("CREATE", d)
 	log.Println("Executing statement:", stmtSQL)
 
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -59,12 +61,12 @@ func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := databaseConfigSQL("ALTER", d)
 	log.Println("Executing statement:", stmtSQL)
 
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -73,7 +75,7 @@ func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	// This is kinda flimsy-feeling, since it depends on the formatting
 	// of the SHOW CREATE DATABASE output... but this data doesn't seem
@@ -84,19 +86,17 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 	stmtSQL := "SHOW CREATE DATABASE " + quoteIdentifier(name)
 
 	log.Println("Executing query:", stmtSQL)
-	rows, _, err := conn.Query(stmtSQL)
+	var createSQL, _database string
+	err := db.QueryRow(stmtSQL).Scan(&_database, &createSQL)
 	if err != nil {
-		if mysqlErr, ok := err.(*mysqlc.Error); ok {
-			if mysqlErr.Code == mysqlc.ER_BAD_DB_ERROR {
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+			if mysqlErr.Number == unknownDatabaseErrCode {
 				d.SetId("")
 				return nil
 			}
 		}
-		return err
+		return fmt.Errorf("Error during show create database: %s", err)
 	}
-
-	row := rows[0]
-	createSQL := string(row[1].([]byte))
 
 	defaultCharset := extractIdentAfter(createSQL, defaultCharacterSetKeyword)
 	defaultCollation := extractIdentAfter(createSQL, defaultCollateKeyword)
@@ -105,16 +105,17 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 		// MySQL doesn't return the collation if it's the default one for
 		// the charset, so if we don't have a collation we need to go
 		// hunt for the default.
-		stmtSQL := "SHOW COLLATION WHERE `Charset` = '%s' AND `Default` = 'Yes'"
-		rows, _, err := conn.Query(stmtSQL, defaultCharset)
+		stmtSQL := "SHOW COLLATION WHERE `Charset` = ? AND `Default` = 'Yes'"
+		var defaultCollation string
+		var empty interface{}
+		err := db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty)
 		if err != nil {
-			return fmt.Errorf("Error getting default charset: %s", err)
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("Charset %s has no default collation", defaultCharset)
+			}
+			return fmt.Errorf("Error getting default charset: %s, %s", err, defaultCharset)
 		}
-		if len(rows) == 0 {
-			return fmt.Errorf("Charset %s has no default collation", defaultCharset)
-		}
-		row := rows[0]
-		defaultCollation = string(row[0].([]byte))
+		return err
 	}
 
 	d.Set("default_character_set", defaultCharset)
@@ -124,13 +125,13 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteDatabase(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	name := d.Id()
 	stmtSQL := "DROP DATABASE " + quoteIdentifier(name)
 	log.Println("Executing statement:", stmtSQL)
 
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}
