@@ -61,3 +61,15 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 ```sh
 $ make testacc
 ```
+
+If you want to run the Acceptance tests on your own machine with a MySQL in Docker:
+
+```bash
+$ docker run --rm --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d -p 3306:3306 mysql:5.7
+$ # wait for a few seconds to let MySQL stand up, check the logs with: docker logs -f some-mysql
+$ export MYSQL_USERNAME=root
+$ export MYSQL_ENDPOINT=localhost:3306
+$ export MYSQL_PASSWORD=my-secret-pw
+$ make testacc
+$ docker rm -f some-mysql
+```
