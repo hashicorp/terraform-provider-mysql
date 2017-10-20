@@ -65,9 +65,17 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 	privileges = strings.Join(privilegesList, ",")
 
+	// checking for database being a asterisk
+	var database string
+	if strings.Compare(d.Get("database").(string), "*") != 0 {
+		database = "`" + d.Get("database").(string) + "`"
+	} else {
+		database = d.Get("database").(string)
+	}
+
 	stmtSQL := fmt.Sprintf("GRANT %s on %s.* TO '%s'@'%s'",
 		privileges,
-		d.Get("database").(string),
+		database,
 		d.Get("user").(string),
 		d.Get("host").(string))
 
@@ -106,8 +114,16 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*providerConfiguration).Conn
 
+	// checking for database being a asterisk
+	var database string
+	if strings.Compare(d.Get("database").(string), "*") != 0 {
+		database = "`" + d.Get("database").(string) + "`"
+	} else {
+		database = d.Get("database").(string)
+	}
+
 	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.* FROM '%s'@'%s'",
-		d.Get("database").(string),
+		database,
 		d.Get("user").(string),
 		d.Get("host").(string))
 
@@ -128,7 +144,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 
 	stmtSQL = fmt.Sprintf("REVOKE %s ON %s.* FROM '%s'@'%s'",
 		privileges,
-		d.Get("database").(string),
+		database,
 		d.Get("user").(string),
 		d.Get("host").(string))
 
