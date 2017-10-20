@@ -1,4 +1,8 @@
-## 0.1.1 (Unreleased)
+## 1.0.0 (Unreleased)
+
+UPGRADE NOTES:
+
+* This provider is now using a different underlying library to access MySQL (See [GH-16]). This should be a drop-in replacement for all of the functionality exposed by this provider, but just in case it is suggested to test cautiously after upgrading (review plans before applying, etc) in case of any edge-cases in interactions with specific versions of MySQL.
 
 ENHANCEMENTS:
 
