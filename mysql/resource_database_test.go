@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	mysqlc "github.com/ziutek/mymysql/mysql"
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
@@ -39,23 +39,29 @@ func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
 			return fmt.Errorf("database id not set")
 		}
 
-		conn := testAccProvider.Meta().(*providerConfiguration).Conn
-		rows, _, err := conn.Query("SHOW CREATE DATABASE terraform_acceptance_test")
+		db := testAccProvider.Meta().(*providerConfiguration).DB
+		rows, err := db.Query("SHOW CREATE DATABASE terraform_acceptance_test")
 		if err != nil {
 			return fmt.Errorf("error reading database: %s", err)
 		}
-		if len(rows) != 1 {
-			return fmt.Errorf("expected 1 row reading database but got %d", len(rows))
-		}
+		defer rows.Close()
 
-		row := rows[0]
-		createSQL := string(row[1].([]byte))
+		rows.Next()
+		var _name, createSQL string
+		err = rows.Scan(&_name, &createSQL)
+		if err != nil {
+			return fmt.Errorf("error scanning create statement: %s", err)
+		}
 
 		if strings.Index(createSQL, "CHARACTER SET utf8") == -1 {
 			return fmt.Errorf("database default charset isn't utf8")
 		}
 		if strings.Index(createSQL, "COLLATE utf8_bin") == -1 {
 			return fmt.Errorf("database default collation isn't utf8_bin")
+		}
+
+		if rows.Next() {
+			return fmt.Errorf("expected 1 row reading database, but got more")
 		}
 
 		*name = rs.Primary.ID
@@ -66,14 +72,16 @@ func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
 
 func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		conn := testAccProvider.Meta().(*providerConfiguration).Conn
+		db := testAccProvider.Meta().(*providerConfiguration).DB
 
-		_, _, err := conn.Query("SHOW CREATE DATABASE terraform_acceptance_test")
+		var name, createSQL string
+		err := db.QueryRow("SHOW CREATE DATABASE terraform_acceptance_test").Scan(&name, &createSQL)
 		if err == nil {
 			return fmt.Errorf("database still exists after destroy")
 		}
-		if mysqlErr, ok := err.(*mysqlc.Error); ok {
-			if mysqlErr.Code == mysqlc.ER_BAD_DB_ERROR {
+
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+			if mysqlErr.Number == unknownDatabaseErrCode {
 				return nil
 			}
 		}

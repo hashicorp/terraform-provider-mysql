@@ -48,7 +48,7 @@ func resourceUser() *schema.Resource {
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := fmt.Sprintf("CREATE USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -66,7 +66,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Println("Executing statement:", stmtSQL)
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		log.Println("Executing query:", stmtSQL)
-		_, _, err := conf.Conn.Query(stmtSQL)
+		_, err := conf.DB.Exec(stmtSQL)
 		if err != nil {
 			return err
 		}
@@ -117,26 +117,27 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadUser(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := fmt.Sprintf("SELECT USER FROM mysql.user WHERE USER='%s'",
 		d.Get("user").(string))
 
 	log.Println("Executing statement:", stmtSQL)
 
-	rows, _, err := conn.Query(stmtSQL)
-	log.Println("Returned rows:", len(rows))
+	rows, err := db.Query(stmtSQL)
 	if err != nil {
 		return err
 	}
-	if len(rows) == 0 {
+	defer rows.Close()
+
+	if !rows.Next() && rows.Err() == nil {
 		d.SetId("")
 	}
-	return nil
+	return rows.Err()
 }
 
 func DeleteUser(d *schema.ResourceData, meta interface{}) error {
-	conn := meta.(*providerConfiguration).Conn
+	db := meta.(*providerConfiguration).DB
 
 	stmtSQL := fmt.Sprintf("DROP USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -144,7 +145,7 @@ func DeleteUser(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	_, _, err := conn.Query(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}

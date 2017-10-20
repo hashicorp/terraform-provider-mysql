@@ -247,6 +247,12 @@
 			"revisionTime": "2017-01-17T13:00:17Z"
 		},
 		{
+			"checksumSHA1": "UNp0x9Ue2LTSHOmj5uGzZytcKnU=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "a8b7ed4454a6a4f98f85d3ad558cd6d97cec6959",
+			"revisionTime": "2017-10-03T16:05:15Z"
+		},
+		{
 			"checksumSHA1": "cdOCt0Yb+hdErz8NAQqayxPmRsY=",
 			"path": "github.com/hashicorp/errwrap",
 			"revision": "7554cd9344cec97297fa6649b055a8c98c2a1e55"
