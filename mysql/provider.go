@@ -104,7 +104,7 @@ func quoteIdentifier(in string) string {
 }
 
 func serverVersion(conn mysqlc.Conn) (*version.Version, error) {
-	rows, _, err := conn.Query("SELECT VERSION()")
+	rows, _, err := conn.Query("SELECT @@GLOBAL.innodb_version")
 	if err != nil {
 		return nil, err
 	}
