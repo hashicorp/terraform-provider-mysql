@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -53,6 +54,22 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_PASSWORD", nil),
 			},
+
+			"sslmode": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("MYSQL_SSLMODE", "disabled"),
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					value := v.(string)
+					sslmodes := map[string]bool{"disabled": true, "required": true}
+					if _, ok := sslmodes[value]; !ok {
+						keys := reflect.ValueOf(sslmodes).MapKeys()
+						errors = append(errors, fmt.Errorf("sslmode must be one of: %s", keys))
+					}
+
+					return
+				},
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -70,17 +87,23 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var username = d.Get("username").(string)
 	var password = d.Get("password").(string)
 	var endpoint = d.Get("endpoint").(string)
+	var sslmode = d.Get("sslmode").(string)
 
 	proto := "tcp"
 	if len(endpoint) > 0 && endpoint[0] == '/' {
 		proto = "unix"
 	}
 
+	tls := "false"
+	if sslmode == "required" {
+		tls = "skip-verify"
+	}
+
 	// database/sql is the thread-safe by default, so we can
 	// safely re-use the same handle between multiple parallel
 	// operations.
 
-	dataSourceName := fmt.Sprintf("%s:%s@%s(%s)/", username, password, proto, endpoint)
+	dataSourceName := fmt.Sprintf("%s:%s@%s(%s)/?tls=%s", username, password, proto, endpoint, tls)
 	db, err := sql.Open("mysql", dataSourceName)
 
 	ver, err := serverVersion(db)
