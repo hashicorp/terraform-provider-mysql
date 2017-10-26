@@ -4,6 +4,7 @@ language: go
 go:
 - 1.8.1
 
+services: mysql
 install:
 # This script is used by the Travis build to install a cookie for
 # go.googlesource.com so rate limits are higher when using `go get` to fetch
@@ -13,13 +14,15 @@ install:
 - go get github.com/kardianos/govendor
 
 script:
+- test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
 - make test
 - make vendor-status
 - make vet
+- export MYSQL_USERNAME=root
+- export MYSQL_ENDPOINT=localhost:3306
+- export MYSQL_PASSWORD=
+- make testacc
 
-branches:
-  only:
-  - master
 matrix:
   fast_finish: true
   allow_failures:
