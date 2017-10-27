@@ -43,12 +43,20 @@ func resourceUser() *schema.Resource {
 				Sensitive:     true,
 				Deprecated:    "Please use plaintext_password instead",
 			},
+
+			"require_ssl": &schema.Schema{
+				Type:        schema.TypeBool,
+				Optional:    true,
+				ForceNew:    false,
+				Default:     false,
+				Description: "Requires this user to connect via SSL (MySQL 5.7.6 and above only)",
+			},
 		},
 	}
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	conf := meta.(*providerConfiguration)
 
 	stmtSQL := fmt.Sprintf("CREATE USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -65,8 +73,15 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
 	}
 
+	if d.Get("require_ssl").(bool) {
+		ver, _ := version.NewVersion("5.7.6")
+		if !conf.ServerVersion.LessThan(ver) {
+			stmtSQL = stmtSQL + "REQUIRE SSL"
+		}
+	}
+
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Exec(stmtSQL)
+	_, err := conf.DB.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -89,21 +104,39 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		newpw = nil
 	}
 
-	if newpw != nil {
+	var newrequire interface{}
+	if d.HasChange("require_ssl") {
+		_, newrequire = d.GetChange("require_ssl")
+		if newrequire.(bool) {
+			newrequire = "SSL"
+		} else {
+			newrequire = "NONE"
+		}
+	} else {
+		newrequire = nil
+	}
+
+	if newpw != nil || newrequire != nil {
 		var stmtSQL string
 
 		/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
 		ver, _ := version.NewVersion("5.7.6")
-		if conf.ServerVersion.LessThan(ver) {
+		if conf.ServerVersion.LessThan(ver) && newpw != nil {
 			stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
 				d.Get("user").(string),
 				d.Get("host").(string),
 				newpw.(string))
 		} else {
-			stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' IDENTIFIED BY '%s'",
+			stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s'",
 				d.Get("user").(string),
 				d.Get("host").(string),
-				newpw.(string))
+			)
+			if newpw != nil {
+				stmtSQL += fmt.Sprintf(" IDENTIFIED BY '%s'", newpw.(string))
+			}
+			if newrequire != nil {
+				stmtSQL += fmt.Sprintf(" REQUIRE %s", newrequire)
+			}
 		}
 
 		log.Println("Executing query:", stmtSQL)
