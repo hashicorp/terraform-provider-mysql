@@ -3,13 +3,16 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"net"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/go-version"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+
+	"golang.org/x/net/proxy"
 )
 
 type providerConfiguration struct {
@@ -79,6 +82,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// database/sql is the thread-safe by default, so we can
 	// safely re-use the same handle between multiple parallel
 	// operations.
+
+	dialer := proxy.FromEnvironment()
+	mysql.RegisterDial("tcp", func(network string) (net.Conn, error) {
+		return dialer.Dial("tcp", network)
+	})
 
 	dataSourceName := fmt.Sprintf("%s:%s@%s(%s)/", username, password, proto, endpoint)
 	db, err := sql.Open("mysql", dataSourceName)
