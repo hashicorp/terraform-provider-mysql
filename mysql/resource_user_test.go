@@ -38,6 +38,25 @@ func TestAccUser_basic(t *testing.T) {
 	})
 }
 
+func TestAccUser_auth(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccUserCheckDestroy,
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccUserConfig_auth_iam_plugin,
+				Check: resource.ComposeTestCheckFunc(
+					testAccUserAuthExists("mysql_user.test"),
+					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("mysql_user.test", "auth.plugin", "mysql_no_login"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccUser_deprecated(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -79,6 +98,33 @@ func testAccUserExists(rn string) resource.TestCheckFunc {
 
 		db := testAccProvider.Meta().(*providerConfiguration).DB
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s'", rs.Primary.ID)
+		log.Println("Executing statement:", stmtSQL)
+		var count int
+		err := db.QueryRow(stmtSQL).Scan(&count)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return fmt.Errorf("expected 1 row reading user but got no rows")
+			}
+			return fmt.Errorf("error reading user: %s", err)
+		}
+
+		return nil
+	}
+}
+
+func testAccUserAuthExists(rn string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[rn]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", rn)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("user id not set")
+		}
+
+		db := testAccProvider.Meta().(*providerConfiguration).DB
+		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s' and plugin = 'mysql_no_login'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
 		err := db.QueryRow(stmtSQL).Scan(&count)
@@ -144,5 +190,15 @@ resource "mysql_user" "test" {
     user = "jdoe"
     host = "example.com"
     password = "password2"
+}
+`
+
+const testAccUserConfig_auth_iam_plugin = `
+resource "mysql_user" "test" {
+    user     = "jdoe"
+    host     = "example.com"
+    auth {
+		plugin = "mysql_no_login"
+	}
 }
 `

@@ -26,6 +26,16 @@ resource "mysql_user" "jdoe" {
 }
 ```
 
+```hcl
+resource "mysql_user" "nologin" {
+  user               = "nologin"
+  host               = "example.com"
+  auth {
+      plugin = "mysql_no_login"
+  }
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -36,11 +46,24 @@ The following arguments are supported:
 
 * `plaintext_password` - (Optional) The password for the user. This must be
   provided in plain text, so the data source for it must be secured.
-  An _unsalted_ hash of the provided password is stored in state.
+  An _unsalted_ hash of the provided password is stored in state. Conflicts
+  with `auth`.
 
 * `password` - (Optional) Deprecated alias of `plaintext_password`, whose
   value is *stored as plaintext in state*. Prefer to use `plaintext_password`
-  instead, which stores the password as an unsalted hash.
+  instead, which stores the password as an unsalted hash. Conflicts with
+  `auth`.
+
+* `auth` - (Optional) Block which supports the use of authentication plugins.
+  Description of the fields allowed in the block below. Conflicts with `password`
+  and `plaintext_password`.
+
+The auth block supports:
+
+ * `plugin` - (Required) The plugin to use with the user. Currently only uses
+ "AWSAuthenticationPlugin" and "mysql_no_login". For more information about
+ "AWSAuthenticationPlugin" and using it with Aurora:
+ http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Creating
 
 ## Attributes Reference
 

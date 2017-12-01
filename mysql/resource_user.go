@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"errors"
 	"github.com/hashicorp/go-version"
-
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -36,6 +36,7 @@ func resourceUser() *schema.Resource {
 				Sensitive: true,
 				StateFunc: hashSum,
 			},
+
 			"password": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -43,12 +44,41 @@ func resourceUser() *schema.Resource {
 				Sensitive:     true,
 				Deprecated:    "Please use plaintext_password instead",
 			},
+
+			"auth": &schema.Schema{
+				Type:          schema.TypeMap,
+				Optional:      true,
+				ConflictsWith: []string{"plaintext_password"},
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"plugin": {
+							Type:     schema.TypeString,
+							Optional: false,
+						},
+					},
+				},
+			},
 		},
 	}
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
+
+	var auth_stm string = ""
+	var auth = make(map[string]string)
+	for k, v := range d.Get("auth").(map[string]interface{}) {
+		auth[k] = v.(string)
+	}
+
+	if len(auth) > 0 {
+		switch auth["plugin"] {
+		case "AWSAuthenticationPlugin":
+			auth_stm = " IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+		case "mysql_no_login":
+			auth_stm = " IDENTIFIED WITH mysql_no_login"
+		}
+	}
 
 	stmtSQL := fmt.Sprintf("CREATE USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -61,7 +91,13 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		password = d.Get("password").(string)
 	}
 
-	if password != "" {
+	if auth["plugin"] == "AWSAuthenticationPlugin" && d.Get("host").(string) == "localhost" {
+		return errors.New("cannot use IAM auth against localhost")
+	}
+
+	if auth_stm != "" {
+		stmtSQL = stmtSQL + auth_stm
+	} else {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
 	}
 
@@ -79,6 +115,16 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	conf := meta.(*providerConfiguration)
+
+	var auth = make(map[string]string)
+	for k, v := range d.Get("auth").(map[string]interface{}) {
+		auth[k] = v.(string)
+	}
+
+	if len(auth) > 0 {
+		// nothing to change, return
+		return nil
+	}
 
 	var newpw interface{}
 	if d.HasChange("plaintext_password") {
