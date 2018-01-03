@@ -1,4 +1,9 @@
 ## 1.0.1 (Unreleased)
+
+BUG FIXES:
+
+* Supporting MySQL versions containing a `~` by updating `hashicorp/go-version` [GH-27]
+
 ## 1.0.0 (November 03, 2017)
 
 UPGRADE NOTES:
