@@ -1,8 +1,8 @@
-## 1.0.1 (Unreleased)
+## 1.0.1 (January 03, 2018)
 
 BUG FIXES:
 
-* Supporting MySQL versions containing a `~` by updating `hashicorp/go-version` [GH-27]
+* Supporting MySQL versions containing a `~` by updating `hashicorp/go-version` ([#27](https://github.com/terraform-providers/terraform-provider-mysql/issues/27))
 
 ## 1.0.0 (November 03, 2017)
 
