@@ -46,17 +46,9 @@ func resourceUser() *schema.Resource {
 			},
 
 			"auth": &schema.Schema{
-				Type:          schema.TypeMap,
+				Type:          schema.TypeString,
 				Optional:      true,
-				ConflictsWith: []string{"plaintext_password"},
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"plugin": {
-							Type:     schema.TypeString,
-							Optional: false,
-						},
-					},
-				},
+				ConflictsWith: []string{"plaintext_password", "password"},
 			},
 		},
 	}
@@ -65,18 +57,18 @@ func resourceUser() *schema.Resource {
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
 
-	var auth_stm string = ""
-	var auth = make(map[string]string)
-	for k, v := range d.Get("auth").(map[string]interface{}) {
-		auth[k] = v.(string)
+	var authStm string
+	var auth string
+	if v, ok := d.GetOk("auth"); ok {
+		auth = v.(string)
 	}
 
 	if len(auth) > 0 {
-		switch auth["plugin"] {
+		switch auth {
 		case "AWSAuthenticationPlugin":
-			auth_stm = " IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+			authStm = " IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
 		case "mysql_no_login":
-			auth_stm = " IDENTIFIED WITH mysql_no_login"
+			authStm = " IDENTIFIED WITH mysql_no_login"
 		}
 	}
 
@@ -91,12 +83,12 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		password = d.Get("password").(string)
 	}
 
-	if auth["plugin"] == "AWSAuthenticationPlugin" && d.Get("host").(string) == "localhost" {
+	if auth == "AWSAuthenticationPlugin" && d.Get("host").(string) == "localhost" {
 		return errors.New("cannot use IAM auth against localhost")
 	}
 
-	if auth_stm != "" {
-		stmtSQL = stmtSQL + auth_stm
+	if authStm != "" {
+		stmtSQL = stmtSQL + authStm
 	} else {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
 	}

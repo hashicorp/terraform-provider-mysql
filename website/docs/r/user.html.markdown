@@ -26,6 +26,8 @@ resource "mysql_user" "jdoe" {
 }
 ```
 
+## Example Usage with an Authentication Plugin
+
 ```hcl
 resource "mysql_user" "nologin" {
   user               = "nologin"
