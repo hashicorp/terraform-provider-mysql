@@ -48,6 +48,7 @@ func resourceUser() *schema.Resource {
 			"auth": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
+				ForceNew:      true,
 				ConflictsWith: []string{"plaintext_password", "password"},
 			},
 		},
@@ -108,9 +109,9 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	conf := meta.(*providerConfiguration)
 
-	var auth = make(map[string]string)
-	for k, v := range d.Get("auth").(map[string]interface{}) {
-		auth[k] = v.(string)
+	var auth string
+	if v, ok := d.GetOk("auth"); ok {
+		auth = v.(string)
 	}
 
 	if len(auth) > 0 {
