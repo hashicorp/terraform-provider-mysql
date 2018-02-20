@@ -50,7 +50,7 @@ func TestAccUser_auth(t *testing.T) {
 					testAccUserAuthExists("mysql_user.test"),
 					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
 					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_user.test", "auth", "mysql_no_login"),
+					resource.TestCheckResourceAttr("mysql_user.test", "auth_plugin", "mysql_no_login"),
 				),
 			},
 		},
@@ -195,8 +195,8 @@ resource "mysql_user" "test" {
 
 const testAccUserConfig_auth_iam_plugin = `
 resource "mysql_user" "test" {
-    user     = "jdoe"
-    host     = "example.com"
-    auth     = "mysql_no_login"
+    user        = "jdoe"
+    host        = "example.com"
+    auth_plugin = "mysql_no_login"
 }
 `

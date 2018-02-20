@@ -45,7 +45,7 @@ func resourceUser() *schema.Resource {
 				Deprecated:    "Please use plaintext_password instead",
 			},
 
-			"auth": &schema.Schema{
+			"auth_plugin": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
@@ -60,7 +60,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 
 	var authStm string
 	var auth string
-	if v, ok := d.GetOk("auth"); ok {
+	if v, ok := d.GetOk("auth_plugin"); ok {
 		auth = v.(string)
 	}
 
@@ -110,7 +110,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	conf := meta.(*providerConfiguration)
 
 	var auth string
-	if v, ok := d.GetOk("auth"); ok {
+	if v, ok := d.GetOk("auth_plugin"); ok {
 		auth = v.(string)
 	}
 
