@@ -422,6 +422,12 @@
 			"versionExact": "v0.10.0"
 		},
 		{
+			"checksumSHA1": "FH5eOEHfHgdxPC/JnfmCeSBk66U=",
+			"path": "github.com/hashicorp/terraform/helper/encryption",
+			"revision": "7c6072c2a00b54dd3a7d0a19436052b2e4b553ab",
+			"revisionTime": "2018-02-21T21:06:03Z"
+		},
+		{
 			"checksumSHA1": "Vbo55GDzPgG/L/+W2pcvDhxrPZc=",
 			"path": "github.com/hashicorp/terraform/helper/experiment",
 			"revision": "2041053ee9444fa8175a298093b55a89586a1823",
@@ -508,6 +514,12 @@
 			"versionExact": "v0.10.0"
 		},
 		{
+			"checksumSHA1": "XY/bpU9gnhLV8MrRcGdy02jqaDI=",
+			"path": "github.com/hashicorp/vault/helper/pgpkeys",
+			"revision": "1aeda8d1163cdcd9b7d746f05ee9e92a637da170",
+			"revisionTime": "2018-03-08T18:09:07Z"
+		},
+		{
 			"checksumSHA1": "ZhK6IO2XN81Y+3RAjTcVm1Ic7oU=",
 			"path": "github.com/hashicorp/yamux",
 			"revision": "d1caa6c97c9fc1cc9e83bbe34d0603f9ff0ce8bd",
@@ -519,6 +531,18 @@
 			"path": "github.com/jmespath/go-jmespath",
 			"revision": "bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d",
 			"revisionTime": "2016-08-03T19:07:31Z"
+		},
+		{
+			"checksumSHA1": "ZpRdb5OIjExm3FCm7CTc8TtSBy8=",
+			"path": "github.com/keybase/go-crypto/openpgp",
+			"revision": "8bab6ce2ea76875dcf28c287110f9cdf17fee30c",
+			"revisionTime": "2018-01-30T15:54:09Z"
+		},
+		{
+			"checksumSHA1": "T7jstUu+oy2AVhZT/Md7R2lY8LM=",
+			"path": "github.com/keybase/go-crypto/openpgp/packet",
+			"revision": "8bab6ce2ea76875dcf28c287110f9cdf17fee30c",
+			"revisionTime": "2018-01-30T15:54:09Z"
 		},
 		{
 			"checksumSHA1": "guxbLo8KHHBeM0rzou4OTzzpDNs=",
@@ -654,5 +678,5 @@
 			"versionExact": "v1.6.1"
 		}
 	],
-	"rootPath": "github.com/terraform-providers/terraform-provider-mysql"
+	"rootPath": "github.com/sfdc-pcg/terraform-provider-mysql"
 }
