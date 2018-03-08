@@ -514,6 +514,12 @@
 			"versionExact": "v0.10.0"
 		},
 		{
+			"checksumSHA1": "yUiSTPf0QUuL2r/81sjuytqBoeQ=",
+			"path": "github.com/hashicorp/vault/helper/jsonutil",
+			"revision": "1aeda8d1163cdcd9b7d746f05ee9e92a637da170",
+			"revisionTime": "2018-03-08T18:09:07Z"
+		},
+		{
 			"checksumSHA1": "XY/bpU9gnhLV8MrRcGdy02jqaDI=",
 			"path": "github.com/hashicorp/vault/helper/pgpkeys",
 			"revision": "1aeda8d1163cdcd9b7d746f05ee9e92a637da170",
