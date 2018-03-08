@@ -551,6 +551,12 @@
 			"revisionTime": "2016-08-03T19:07:31Z"
 		},
 		{
+			"checksumSHA1": "VJk3rOWfxEV9Ilig5lgzH1qg8Ss=",
+			"path": "github.com/keybase/go-crypto/brainpool",
+			"revision": "8bab6ce2ea76875dcf28c287110f9cdf17fee30c",
+			"revisionTime": "2018-01-30T15:54:09Z"
+		},
+		{
 			"checksumSHA1": "ZpRdb5OIjExm3FCm7CTc8TtSBy8=",
 			"path": "github.com/keybase/go-crypto/openpgp",
 			"revision": "8bab6ce2ea76875dcf28c287110f9cdf17fee30c",
