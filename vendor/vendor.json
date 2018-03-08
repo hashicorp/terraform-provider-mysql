@@ -557,6 +557,12 @@
 			"revisionTime": "2018-01-30T15:54:09Z"
 		},
 		{
+			"checksumSHA1": "rnRjEJs5luF+DIXp2J6LFcQk8Gg=",
+			"path": "github.com/keybase/go-crypto/cast5",
+			"revision": "8bab6ce2ea76875dcf28c287110f9cdf17fee30c",
+			"revisionTime": "2018-01-30T15:54:09Z"
+		},
+		{
 			"checksumSHA1": "ZpRdb5OIjExm3FCm7CTc8TtSBy8=",
 			"path": "github.com/keybase/go-crypto/openpgp",
 			"revision": "8bab6ce2ea76875dcf28c287110f9cdf17fee30c",
