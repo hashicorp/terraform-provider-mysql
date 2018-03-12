@@ -21,6 +21,7 @@ script:
 - export MYSQL_USERNAME=root
 - export MYSQL_ENDPOINT=localhost:3306
 - export MYSQL_PASSWORD=
+- mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
 - make testacc
 
 matrix:
