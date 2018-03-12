@@ -1,4 +1,10 @@
-## 1.0.2 (Unreleased)
+## 1.1.0 (Unreleased)
+
+IMPROVEMENTS:
+
+* `resource/user`: Added the `auth_plugin` attribute, which allows for the use
+  of authentication plugins when creating MySQL users. [GH-26]
+
 ## 1.0.1 (January 03, 2018)
 
 BUG FIXES:
