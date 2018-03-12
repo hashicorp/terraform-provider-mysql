@@ -26,6 +26,16 @@ resource "mysql_user" "jdoe" {
 }
 ```
 
+## Example Usage with an Authentication Plugin
+
+```hcl
+resource "mysql_user" "nologin" {
+  user               = "nologin"
+  host               = "example.com"
+  auth_plugin        = "mysql_no_login"
+}
+```
+
 ## Argument Reference
 
 The following arguments are supported:
@@ -36,11 +46,26 @@ The following arguments are supported:
 
 * `plaintext_password` - (Optional) The password for the user. This must be
   provided in plain text, so the data source for it must be secured.
-  An _unsalted_ hash of the provided password is stored in state.
+  An _unsalted_ hash of the provided password is stored in state. Conflicts
+  with `auth_plugin`.
 
 * `password` - (Optional) Deprecated alias of `plaintext_password`, whose
   value is *stored as plaintext in state*. Prefer to use `plaintext_password`
-  instead, which stores the password as an unsalted hash.
+  instead, which stores the password as an unsalted hash. Conflicts with
+  `auth_plugin`.
+
+* `auth_plugin` - (Optional) Block which supports the use of authentication plugins.
+  Description of the fields allowed in the block below. Conflicts with `password`
+  and `plaintext_password`.
+
+The `auth_plugin` value supports:
+
+ * `AWSAuthenticationPlugin` - For more information about "AWSAuthenticationPlugin"
+ and using it with Aurora:
+ http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Creating
+ * `mysql_no_login` - Uses the MySQL No-Login Authentication Plugin. The No-Login
+ Authentication Plugin must be active in MySQL. For more information:
+ https://dev.mysql.com/doc/refman/5.7/en/no-login-pluggable-authentication.html
 
 ## Attributes Reference
 

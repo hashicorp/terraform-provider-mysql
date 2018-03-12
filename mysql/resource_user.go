@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"errors"
 	"github.com/hashicorp/go-version"
-
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -36,6 +36,7 @@ func resourceUser() *schema.Resource {
 				Sensitive: true,
 				StateFunc: hashSum,
 			},
+
 			"password": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -43,12 +44,34 @@ func resourceUser() *schema.Resource {
 				Sensitive:     true,
 				Deprecated:    "Please use plaintext_password instead",
 			},
+
+			"auth_plugin": &schema.Schema{
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"plaintext_password", "password"},
+			},
 		},
 	}
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
+
+	var authStm string
+	var auth string
+	if v, ok := d.GetOk("auth_plugin"); ok {
+		auth = v.(string)
+	}
+
+	if len(auth) > 0 {
+		switch auth {
+		case "AWSAuthenticationPlugin":
+			authStm = " IDENTIFIED WITH AWSAuthenticationPlugin as 'RDS'"
+		case "mysql_no_login":
+			authStm = " IDENTIFIED WITH mysql_no_login"
+		}
+	}
 
 	stmtSQL := fmt.Sprintf("CREATE USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -61,7 +84,13 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		password = d.Get("password").(string)
 	}
 
-	if password != "" {
+	if auth == "AWSAuthenticationPlugin" && d.Get("host").(string) == "localhost" {
+		return errors.New("cannot use IAM auth against localhost")
+	}
+
+	if authStm != "" {
+		stmtSQL = stmtSQL + authStm
+	} else {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
 	}
 
@@ -79,6 +108,16 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	conf := meta.(*providerConfiguration)
+
+	var auth string
+	if v, ok := d.GetOk("auth_plugin"); ok {
+		auth = v.(string)
+	}
+
+	if len(auth) > 0 {
+		// nothing to change, return
+		return nil
+	}
 
 	var newpw interface{}
 	if d.HasChange("plaintext_password") {
