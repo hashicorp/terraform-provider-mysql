@@ -54,18 +54,27 @@ The following arguments are supported:
   instead, which stores the password as an unsalted hash. Conflicts with
   `auth_plugin`.
 
-* `auth_plugin` - (Optional) Block which supports the use of authentication plugins.
-  Description of the fields allowed in the block below. Conflicts with `password`
-  and `plaintext_password`.
+* `auth_plugin` - (Optional) Use an [authentication plugin][ref-auth-plugins]
+  to authenticate the user instead of using password authentication.
+  Description of the fields allowed in the block below. Conflicts with
+  `password` and `plaintext_password`.
+
+[ref-auth-plugins]: https://dev.mysql.com/doc/refman/5.7/en/authentication-plugins.html
 
 The `auth_plugin` value supports:
 
- * `AWSAuthenticationPlugin` - For more information about "AWSAuthenticationPlugin"
- and using it with Aurora:
- http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Creating
- * `mysql_no_login` - Uses the MySQL No-Login Authentication Plugin. The No-Login
- Authentication Plugin must be active in MySQL. For more information:
- https://dev.mysql.com/doc/refman/5.7/en/no-login-pluggable-authentication.html
+* `AWSAuthenticationPlugin` - Allows the use of IAM authentication with [Amazon
+  Aurora][ref-amazon-aurora]. For more details on how to use IAM auth with
+  Aurora, see [here][ref-aurora-using-iam].
+
+[ref-amazon-aurora]: https://aws.amazon.com/rds/aurora/
+[ref-aurora-using-iam]: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html#UsingWithRDS.IAMDBAuth.Creating
+
+* `mysql_no_login` - Uses the MySQL No-Login Authentication Plugin. The
+  No-Login Authentication Plugin must be active in MySQL. For more information,
+  see [here][ref-mysql-no-login].
+
+[ref-mysql-no-login]: https://dev.mysql.com/doc/refman/5.7/en/no-login-pluggable-authentication.html
 
 ## Attributes Reference
 
