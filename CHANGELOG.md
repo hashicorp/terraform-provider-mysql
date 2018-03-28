@@ -1,9 +1,9 @@
-## 1.1.0 (Unreleased)
+## 1.1.0 (March 28, 2018)
 
 IMPROVEMENTS:
 
 * `resource/user`: Added the `auth_plugin` attribute, which allows for the use
-  of authentication plugins when creating MySQL users. [GH-26]
+  of authentication plugins when creating MySQL users. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/26))
 
 ## 1.0.1 (January 03, 2018)
 
