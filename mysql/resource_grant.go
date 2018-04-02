@@ -51,6 +51,13 @@ func resourceGrant() *schema.Resource {
 				ForceNew: true,
 				Default:  false,
 			},
+
+			"require_ssl": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				ForceNew: true,
+				Default:  false,
+			},
 		},
 	}
 }
@@ -75,6 +82,10 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 
 	if d.Get("grant").(bool) {
 		stmtSQL += " WITH GRANT OPTION"
+	}
+
+	if d.Get("require_ssl").(bool) {
+		stmtSQL += " REQUIRE SSL"
 	}
 
 	log.Println("Executing statement:", stmtSQL)
