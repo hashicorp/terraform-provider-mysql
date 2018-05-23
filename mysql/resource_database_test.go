@@ -29,6 +29,43 @@ func TestAccDatabase(t *testing.T) {
 	})
 }
 
+func TestAccDatabase_collationChange(t *testing.T) {
+	dbName := "terraform_acceptance_test"
+
+	charset1 := "latin1"
+	charset2 := "utf8"
+	collation1 := "latin1_bin"
+	collation2 := "utf8_general_ci"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccDatabaseCheckDestroy(dbName),
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDatabaseCheck_full(
+						"mysql_database.test", dbName, charset1, collation1,
+					),
+				),
+			},
+			resource.TestStep{
+				PreConfig: func() {
+					db := testAccProvider.Meta().(*providerConfiguration).DB
+					db.Query(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET %s COLLATE %s", dbName, charset2, collation2))
+				},
+				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDatabaseCheck_full(
+						"mysql_database.test", dbName, charset1, collation1,
+					),
+				),
+			},
+		},
+	})
+}
+
 func testAccDatabaseCheck_basic(rn string, name string) resource.TestCheckFunc {
 	return testAccDatabaseCheck_full(rn, name, "utf8", "utf8_bin")
 }
