@@ -1,14 +1,14 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
-	"log"
-	"strings"
-	"testing"
-
 	"github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"log"
+	"strings"
+	"testing"
 )
 
 func TestAccGrant(t *testing.T) {
@@ -46,7 +46,12 @@ func testAccPrivilegeExists(rn string, privilege string) resource.TestCheckFunc 
 		user := userhost[0]
 		host := userhost[1]
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		data := testAccProvider.Meta().(*providerConfiguration).Data
+		db, err := sql.Open("mysql", data)
+
+		if err != nil {
+			return nil
+		}
 		stmtSQL := fmt.Sprintf("SHOW GRANTS for '%s'@'%s'", user, host)
 		log.Println("Executing statement:", stmtSQL)
 		rows, err := db.Query(stmtSQL)
@@ -72,13 +77,18 @@ func testAccPrivilegeExists(rn string, privilege string) resource.TestCheckFunc 
 		if !privilegeFound {
 			return fmt.Errorf("grant no found for '%s'@'%s'", user, host)
 		}
-
+		defer db.Close()
 		return nil
 	}
 }
 
 func testAccGrantCheckDestroy(s *terraform.State) error {
-	db := testAccProvider.Meta().(*providerConfiguration).DB
+	data := testAccProvider.Meta().(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		return nil
+	}
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "mysql_grant" {
@@ -108,6 +118,7 @@ func testAccGrantCheckDestroy(s *terraform.State) error {
 			return fmt.Errorf("grant still exists for'%s'@'%s'", user, host)
 		}
 	}
+	defer db.Close()
 	return nil
 }
 

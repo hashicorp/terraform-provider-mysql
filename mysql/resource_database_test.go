@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -39,7 +40,12 @@ func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
 			return fmt.Errorf("database id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		data := testAccProvider.Meta().(*providerConfiguration).Data
+		db, err := sql.Open("mysql", data)
+
+		if err != nil {
+			return nil
+		}
 		rows, err := db.Query("SHOW CREATE DATABASE terraform_acceptance_test")
 		if err != nil {
 			return fmt.Errorf("error reading database: %s", err)
@@ -65,17 +71,22 @@ func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
 		}
 
 		*name = rs.Primary.ID
-
+		defer db.Close()
 		return nil
 	}
 }
 
 func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		data := testAccProvider.Meta().(*providerConfiguration).Data
+		db, err := sql.Open("mysql", data)
+
+		if err != nil {
+			return nil
+		}
 
 		var name, createSQL string
-		err := db.QueryRow("SHOW CREATE DATABASE terraform_acceptance_test").Scan(&name, &createSQL)
+		err = db.QueryRow("SHOW CREATE DATABASE terraform_acceptance_test").Scan(&name, &createSQL)
 		if err == nil {
 			return fmt.Errorf("database still exists after destroy")
 		}
@@ -85,7 +96,7 @@ func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 				return nil
 			}
 		}
-
+		defer db.Close()
 		return fmt.Errorf("got unexpected error: %s", err)
 	}
 }

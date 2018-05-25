@@ -1,12 +1,12 @@
 package mysql
 
 import (
-	"fmt"
-	"log"
-
+	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
 func resourceUser() *schema.Resource {
@@ -56,7 +56,12 @@ func resourceUser() *schema.Resource {
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		return err
+	}
 
 	var authStm string
 	var auth string
@@ -95,20 +100,40 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
 
 	user := fmt.Sprintf("%s@%s", d.Get("user").(string), d.Get("host").(string))
 	d.SetId(user)
-
+	defer db.Close()
 	return nil
 }
 
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
-	conf := meta.(*providerConfiguration)
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
 
+	if err != nil {
+		return err
+	}
+
+	rows, err := db.Query("SELECT VERSION()")
+	if err != nil {
+		return err
+	}
+	if !rows.Next() {
+		return nil
+	}
+
+	var versionString string
+	rows.Scan(&versionString)
+	dbversion, err := version.NewVersion(versionString)
+
+	if err != nil {
+		return err
+	}
 	var auth string
 	if v, ok := d.GetOk("auth_plugin"); ok {
 		auth = v.(string)
@@ -133,7 +158,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 
 		/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
 		ver, _ := version.NewVersion("5.7.6")
-		if conf.ServerVersion.LessThan(ver) {
+		if dbversion.LessThan(ver) {
 			stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
 				d.Get("user").(string),
 				d.Get("host").(string),
@@ -146,17 +171,22 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		log.Println("Executing query:", stmtSQL)
-		_, err := conf.DB.Exec(stmtSQL)
+		_, err = db.Exec(stmtSQL)
 		if err != nil {
 			return err
 		}
 	}
-
+	defer db.Close()
 	return nil
 }
 
 func ReadUser(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		return err
+	}
 
 	stmtSQL := fmt.Sprintf("SELECT USER FROM mysql.user WHERE USER='%s'",
 		d.Get("user").(string))
@@ -172,11 +202,17 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 	if !rows.Next() && rows.Err() == nil {
 		d.SetId("")
 	}
+	defer db.Close()
 	return rows.Err()
 }
 
 func DeleteUser(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	stmtSQL := fmt.Sprintf("DROP USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -184,9 +220,10 @@ func DeleteUser(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}
+	defer db.Close()
 	return err
 }

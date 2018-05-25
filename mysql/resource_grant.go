@@ -1,11 +1,11 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
+	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 	"strings"
-
-	"github.com/hashicorp/terraform/helper/schema"
 )
 
 const nonexistingGrantErrCode = 1141
@@ -56,7 +56,12 @@ func resourceGrant() *schema.Resource {
 }
 
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// create a comma-delimited string of privileges
 	var privileges string
@@ -78,19 +83,24 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
 
 	user := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database"))
 	d.SetId(user)
-
+	defer db.Close()
 	return ReadGrant(d, meta)
 }
 
 func ReadGrant(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	stmtSQL := fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'",
 		d.Get("user").(string),
@@ -104,11 +114,17 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 	} else {
 		rows.Close()
 	}
+	defer db.Close()
 	return nil
 }
 
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.* FROM '%s'@'%s'",
 		d.Get("database").(string),
@@ -116,7 +132,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Query(stmtSQL)
+	_, err = db.Query(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -131,6 +147,6 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	defer db.Close()
 	return nil
 }

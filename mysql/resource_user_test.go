@@ -3,11 +3,10 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"testing"
-
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"log"
+	"testing"
 )
 
 func TestAccUser_basic(t *testing.T) {
@@ -96,18 +95,23 @@ func testAccUserExists(rn string) resource.TestCheckFunc {
 			return fmt.Errorf("user id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		data := testAccProvider.Meta().(*providerConfiguration).Data
+		db, err := sql.Open("mysql", data)
+
+		if err != nil {
+			return nil
+		}
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
-		err := db.QueryRow(stmtSQL).Scan(&count)
+		err = db.QueryRow(stmtSQL).Scan(&count)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return fmt.Errorf("expected 1 row reading user but got no rows")
 			}
 			return fmt.Errorf("error reading user: %s", err)
 		}
-
+		defer db.Close()
 		return nil
 	}
 }
@@ -123,24 +127,34 @@ func testAccUserAuthExists(rn string) resource.TestCheckFunc {
 			return fmt.Errorf("user id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		data := testAccProvider.Meta().(*providerConfiguration).Data
+		db, err := sql.Open("mysql", data)
+
+		if err != nil {
+			return nil
+		}
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s' and plugin = 'mysql_no_login'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
-		err := db.QueryRow(stmtSQL).Scan(&count)
+		err = db.QueryRow(stmtSQL).Scan(&count)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return fmt.Errorf("expected 1 row reading user but got no rows")
 			}
 			return fmt.Errorf("error reading user: %s", err)
 		}
-
+		defer db.Close()
 		return nil
 	}
 }
 
 func testAccUserCheckDestroy(s *terraform.State) error {
-	db := testAccProvider.Meta().(*providerConfiguration).DB
+	data := testAccProvider.Meta().(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		return nil
+	}
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "mysql_user" {
@@ -158,6 +172,7 @@ func testAccUserCheckDestroy(s *terraform.State) error {
 			return fmt.Errorf("user still exists after destroy")
 		}
 	}
+	defer db.Close()
 	return nil
 }
 

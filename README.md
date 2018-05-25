@@ -70,7 +70,7 @@ $ # wait for a few seconds to let MySQL stand up, check the logs with: docker lo
 $ export MYSQL_USERNAME=root
 $ export MYSQL_ENDPOINT=localhost:3306
 $ export MYSQL_PASSWORD=my-secret-pw
-$ mysql -h localhost -u root -p -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+$ mysql -h 127.0.0.1 -u root -p -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
 $ make testacc
 $ docker rm -f some-mysql
 ```

@@ -13,8 +13,7 @@ import (
 )
 
 type providerConfiguration struct {
-	DB            *sql.DB
-	ServerVersion *version.Version
+	Data string
 }
 
 func Provider() terraform.ResourceProvider {
@@ -81,16 +80,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	// operations.
 
 	dataSourceName := fmt.Sprintf("%s:%s@%s(%s)/", username, password, proto, endpoint)
-	db, err := sql.Open("mysql", dataSourceName)
-
-	ver, err := serverVersion(db)
-	if err != nil {
-		return nil, err
-	}
 
 	return &providerConfiguration{
-		DB:            db,
-		ServerVersion: ver,
+		Data: dataSourceName,
 	}, nil
 }
 

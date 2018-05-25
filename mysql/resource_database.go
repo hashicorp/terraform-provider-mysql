@@ -45,37 +45,52 @@ func resourceDatabase() *schema.Resource {
 }
 
 func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
 
-	stmtSQL := databaseConfigSQL("CREATE", d)
-	log.Println("Executing statement:", stmtSQL)
-
-	_, err := db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
 
+	stmtSQL := databaseConfigSQL("CREATE", d)
+	log.Println("Executing statement:", stmtSQL)
+
+	_, err = db.Exec(stmtSQL)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 	d.SetId(d.Get("name").(string))
 
 	return nil
 }
 
 func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
 
-	stmtSQL := databaseConfigSQL("ALTER", d)
-	log.Println("Executing statement:", stmtSQL)
-
-	_, err := db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
 
+	stmtSQL := databaseConfigSQL("ALTER", d)
+	log.Println("Executing statement:", stmtSQL)
+
+	_, err = db.Exec(stmtSQL)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 	return nil
 }
 
 func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		return err
+	}
 
 	// This is kinda flimsy-feeling, since it depends on the formatting
 	// of the SHOW CREATE DATABASE output... but this data doesn't seem
@@ -87,7 +102,7 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing query:", stmtSQL)
 	var createSQL, _database string
-	err := db.QueryRow(stmtSQL).Scan(&_database, &createSQL)
+	err = db.QueryRow(stmtSQL).Scan(&_database, &createSQL)
 	if err != nil {
 		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
 			if mysqlErr.Number == unknownDatabaseErrCode {
@@ -120,21 +135,27 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("default_character_set", defaultCharset)
 	d.Set("default_collation", defaultCollation)
-
+	defer db.Close()
 	return nil
 }
 
 func DeleteDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	data := meta.(*providerConfiguration).Data
+	db, err := sql.Open("mysql", data)
+
+	if err != nil {
+		return err
+	}
 
 	name := d.Id()
 	stmtSQL := "DROP DATABASE " + quoteIdentifier(name)
 	log.Println("Executing statement:", stmtSQL)
 
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}
+	defer db.Close()
 	return err
 }
 
