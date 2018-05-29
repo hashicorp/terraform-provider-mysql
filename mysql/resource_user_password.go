@@ -66,7 +66,7 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 	d.Set("key_fingerprint", fingerprint)
 	d.Set("encrypted_password", encrypted)
 
-	stmtSQL := fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = '%s'",
+	stmtSQL := fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
 		d.Get("user").(string),
 		d.Get("host").(string),
 		password)
