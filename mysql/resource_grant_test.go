@@ -24,6 +24,7 @@ func TestAccGrant(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_grant.test", "user", "jdoe"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "table", "*"),
 				),
 			},
 		},
