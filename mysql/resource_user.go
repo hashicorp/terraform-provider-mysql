@@ -52,11 +52,19 @@ func resourceUser() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"plaintext_password", "password"},
 			},
+
+			"tls_option": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "NONE",
+			},
 		},
 	}
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
+	conf := meta.(*providerConfiguration)
 	db := meta.(*providerConfiguration).DB
 
 	var authStm string
@@ -93,6 +101,11 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL = stmtSQL + authStm
 	} else {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
+	}
+
+	ver, _ := version.NewVersion("5.7.0")
+	if conf.ServerVersion.GreaterThan(ver) {
+		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
 	log.Println("Executing statement:", stmtSQL)
@@ -145,6 +158,22 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 				d.Get("host").(string),
 				newpw.(string))
 		}
+
+		log.Println("Executing query:", stmtSQL)
+		_, err := conf.DB.Exec(stmtSQL)
+		if err != nil {
+			return err
+		}
+	}
+
+	ver, _ := version.NewVersion("5.7.0")
+	if d.HasChange("tls_option") && conf.ServerVersion.GreaterThan(ver) {
+		var stmtSQL string
+
+		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s'  REQUIRE %s",
+			d.Get("user").(string),
+			d.Get("host").(string),
+			fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string)))
 
 		log.Println("Executing query:", stmtSQL)
 		_, err := conf.DB.Exec(stmtSQL)

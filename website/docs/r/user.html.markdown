@@ -59,6 +59,12 @@ The following arguments are supported:
   Description of the fields allowed in the block below. Conflicts with
   `password` and `plaintext_password`.
 
+* `tls_option` - (Optional) An TLS-Option for the CREATE USER-Statement or ALTER USER
+  The Value is suffixed to REQUIRE. F.e. the value 'SSL' will
+  gernate an SQL like this: `CREATE USER ..... REQUIRE SSL`
+  See https://dev.mysql.com/doc/refman/5.7/en/create-user.html
+  For MySql-Server-Versions less than 5.7.0 this options will be ignored.
+
 [ref-auth-plugins]: https://dev.mysql.com/doc/refman/5.7/en/authentication-plugins.html
 
 The `auth_plugin` value supports:
