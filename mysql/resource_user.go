@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"errors"
+
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/schema"
 )
