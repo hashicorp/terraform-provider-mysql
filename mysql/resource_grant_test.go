@@ -24,6 +24,17 @@ func TestAccGrant(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_grant.test", "user", "jdoe"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "tls_option", "NONE"),
+				),
+			},
+			resource.TestStep{
+				Config: testAccGrantConfig_ssl,
+				Check: resource.ComposeTestCheckFunc(
+					testAccPrivilegeExists("mysql_grant.test", "SELECT"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "tls_option", "SSL"),
 				),
 			},
 		},
@@ -123,5 +134,21 @@ resource "mysql_grant" "test" {
         host = "${mysql_user.test.host}"
         database = "foo"
         privileges = ["UPDATE", "SELECT"]
+}
+`
+
+const testAccGrantConfig_ssl = `
+resource "mysql_user" "test" {
+        user = "jdoe"
+				host = "example.com"
+				password = "password"
+}
+
+resource "mysql_grant" "test" {
+        user = "${mysql_user.test.user}"
+        host = "${mysql_user.test.host}"
+        database = "foo"
+		privileges = ["UPDATE", "SELECT"]
+		tls_option = "SSL"
 }
 `
