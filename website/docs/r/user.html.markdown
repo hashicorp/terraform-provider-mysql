@@ -63,7 +63,7 @@ The following arguments are supported:
   The Value is suffixed to REQUIRE. F.e. the value 'SSL' will
   gernate an SQL like this: `CREATE USER ..... REQUIRE SSL`
   See https://dev.mysql.com/doc/refman/5.7/en/create-user.html
-  For MySql-Server-Versions less than 5.7.0 this options will be ignored.
+  For MySql-Server-Versions less than 5.7 this options will be ignored.
 
 [ref-auth-plugins]: https://dev.mysql.com/doc/refman/5.7/en/authentication-plugins.html
 
