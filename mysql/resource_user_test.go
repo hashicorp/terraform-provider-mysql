@@ -96,7 +96,11 @@ func testAccUserExists(rn string) resource.TestCheckFunc {
 			return fmt.Errorf("user id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		if err != nil {
+			return err
+		}
+
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
@@ -123,7 +127,11 @@ func testAccUserAuthExists(rn string) resource.TestCheckFunc {
 			return fmt.Errorf("user id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		if err != nil {
+			return err
+		}
+
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s' and plugin = 'mysql_no_login'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
@@ -140,7 +148,10 @@ func testAccUserAuthExists(rn string) resource.TestCheckFunc {
 }
 
 func testAccUserCheckDestroy(s *terraform.State) error {
-	db := testAccProvider.Meta().(*providerConfiguration).DB
+	db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "mysql_user" {

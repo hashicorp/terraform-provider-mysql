@@ -52,7 +52,11 @@ func TestAccDatabase_collationChange(t *testing.T) {
 			},
 			resource.TestStep{
 				PreConfig: func() {
-					db := testAccProvider.Meta().(*providerConfiguration).DB
+					db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+					if err != nil {
+						return err
+					}
+
 					db.Query(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET %s COLLATE %s", dbName, charset2, collation2))
 				},
 				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
@@ -81,7 +85,11 @@ func testAccDatabaseCheck_full(rn string, name string, charset string, collation
 			return fmt.Errorf("database id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		if err != nil {
+			return err
+		}
+
 		rows, err := db.Query(fmt.Sprintf("SHOW CREATE DATABASE %s", name))
 		if err != nil {
 			return fmt.Errorf("error reading database: %s", err)
@@ -112,7 +120,10 @@ func testAccDatabaseCheck_full(rn string, name string, charset string, collation
 
 func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		if err != nil {
+			return err
+		}
 
 		var _name, createSQL string
 		err := db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
