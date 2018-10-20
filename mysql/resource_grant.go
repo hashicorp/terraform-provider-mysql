@@ -121,12 +121,11 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	rows, err := db.Query(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		d.SetId("")
-	} else {
-		rows.Close()
 	}
+
 	return nil
 }
 
@@ -143,7 +142,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err = db.Query(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
