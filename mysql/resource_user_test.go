@@ -104,7 +104,7 @@ func testAccUserExists(rn string) resource.TestCheckFunc {
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
-		err := db.QueryRow(stmtSQL).Scan(&count)
+		err = db.QueryRow(stmtSQL).Scan(&count)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return fmt.Errorf("expected 1 row reading user but got no rows")
@@ -135,7 +135,7 @@ func testAccUserAuthExists(rn string) resource.TestCheckFunc {
 		stmtSQL := fmt.Sprintf("SELECT count(*) from mysql.user where CONCAT(user, '@', host) = '%s' and plugin = 'mysql_no_login'", rs.Primary.ID)
 		log.Println("Executing statement:", stmtSQL)
 		var count int
-		err := db.QueryRow(stmtSQL).Scan(&count)
+		err = db.QueryRow(stmtSQL).Scan(&count)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return fmt.Errorf("expected 1 row reading user but got no rows")

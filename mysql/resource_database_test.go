@@ -54,7 +54,7 @@ func TestAccDatabase_collationChange(t *testing.T) {
 				PreConfig: func() {
 					db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
 					if err != nil {
-						return err
+						return
 					}
 
 					db.Query(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET %s COLLATE %s", dbName, charset2, collation2))
@@ -126,7 +126,7 @@ func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 		}
 
 		var _name, createSQL string
-		err := db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
+		err = db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
 		if err == nil {
 			return fmt.Errorf("database still exists after destroy")
 		}
