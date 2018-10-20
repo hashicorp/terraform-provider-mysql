@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/go-version"
 
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -114,9 +116,32 @@ func serverVersion(db *sql.DB) (*version.Version, error) {
 
 func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
 	dsn := conf.FormatDSN()
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("Could not connect to DB (%s): %s", dsn, err)
+	var db *sql.DB
+	var err error
+
+	// When provisioning a database server there can often be a lag between
+	// when Terraform thinks it's available and when it is actually available.
+	// This is particularly acute when provisioning a server and then immediately
+	// trying to provision a database on it.
+	retryError := resource.Retry(5*time.Minute, func() *resource.RetryError {
+		db, err = sql.Open("mysql", dsn)
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+
+		// The Go SDK for MySQL doesn't actually connect until a query is ran.
+		// This forces a simple query to run, which runs a connect, which lets
+		// the retry logic do its thing.
+		_, err = serverVersion(db)
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+
+		return nil
+	})
+
+	if retryError != nil {
+		return nil, fmt.Errorf("Could not connect to server: %s", retryError)
 	}
 
 	return db, nil
