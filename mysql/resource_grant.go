@@ -141,17 +141,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	// create a comma-delimited string of privileges
-	var privileges string
-	var privilegesList []string
-	vL := d.Get("privileges").(*schema.Set).List()
-	for _, v := range vL {
-		privilegesList = append(privilegesList, v.(string))
-	}
-	privileges = strings.Join(privilegesList, ",")
-
-	stmtSQL = fmt.Sprintf("REVOKE %s ON %s.* FROM '%s'@'%s'",
-		privileges,
+	stmtSQL = fmt.Sprintf("REVOKE ALL ON %s.* FROM '%s'@'%s'",
 		database,
 		d.Get("user").(string),
 		d.Get("host").(string))
