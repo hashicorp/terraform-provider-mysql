@@ -58,6 +58,13 @@ func resourceGrant() *schema.Resource {
 				ForceNew: true,
 				Default:  false,
 			},
+
+			"tls_option": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "NONE",
+			},
 		},
 	}
 }
@@ -80,6 +87,8 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("table").(string),
 		d.Get("user").(string),
 		d.Get("host").(string))
+
+	stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 
 	if d.Get("grant").(bool) {
 		stmtSQL += " WITH GRANT OPTION"

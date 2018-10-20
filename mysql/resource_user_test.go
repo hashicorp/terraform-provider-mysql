@@ -23,6 +23,17 @@ func TestAccUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
 					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
 					resource.TestCheckResourceAttr("mysql_user.test", "plaintext_password", hashSum("password")),
+					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "NONE"),
+				),
+			},
+			resource.TestStep{
+				Config: testAccUserConfig_ssl,
+				Check: resource.ComposeTestCheckFunc(
+					testAccUserExists("mysql_user.test"),
+					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("mysql_user.test", "plaintext_password", hashSum("password")),
+					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "SSL"),
 				),
 			},
 			resource.TestStep{
@@ -32,6 +43,7 @@ func TestAccUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_user.test", "user", "jdoe"),
 					resource.TestCheckResourceAttr("mysql_user.test", "host", "example.com"),
 					resource.TestCheckResourceAttr("mysql_user.test", "plaintext_password", hashSum("password2")),
+					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "NONE"),
 				),
 			},
 		},
@@ -166,6 +178,15 @@ resource "mysql_user" "test" {
     user = "jdoe"
     host = "example.com"
     plaintext_password = "password"
+}
+`
+
+const testAccUserConfig_ssl = `
+resource "mysql_user" "test" {
+    user = "jdoe"
+    host = "example.com"
+	plaintext_password = "password"
+	tls_option = "SSL"
 }
 `
 
