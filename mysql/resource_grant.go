@@ -37,6 +37,13 @@ func resourceGrant() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"table": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "*",
+			},
+
 			"privileges": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
@@ -74,9 +81,10 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 	privileges = strings.Join(privilegesList, ",")
 
-	stmtSQL := fmt.Sprintf("GRANT %s on %s.* TO '%s'@'%s'",
+	stmtSQL := fmt.Sprintf("GRANT %s on %s.%s TO '%s'@'%s'",
 		privileges,
 		d.Get("database").(string),
+		d.Get("table").(string),
 		d.Get("user").(string),
 		d.Get("host").(string))
 
@@ -119,8 +127,9 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
 
-	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.* FROM '%s'@'%s'",
+	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM '%s'@'%s'",
 		d.Get("database").(string),
+		d.Get("table").(string),
 		d.Get("user").(string),
 		d.Get("host").(string))
 
@@ -130,8 +139,9 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	stmtSQL = fmt.Sprintf("REVOKE ALL ON %s.* FROM '%s'@'%s'",
+	stmtSQL = fmt.Sprintf("REVOKE ALL ON %s.%s FROM '%s'@'%s'",
 		d.Get("database").(string),
+		d.Get("table").(string),
 		d.Get("user").(string),
 		d.Get("host").(string))
 
