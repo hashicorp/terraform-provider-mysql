@@ -78,4 +78,9 @@ The `auth_plugin` value supports:
 
 ## Attributes Reference
 
-No further attributes are exported.
+The following attributes are exported:
+
+* `user` - The name of the user.
+* `password` - The password of the user.
+* `id` - The id of the user created, composed as "username@host".
+* `host` - The host where the user was created.

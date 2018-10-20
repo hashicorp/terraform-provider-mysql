@@ -51,4 +51,9 @@ configuration and then set the ``default_character_set`` and
 
 ## Attributes Reference
 
-No further attributes are exported.
+The following attributes are exported:
+
+* `name` - The name of the database.
+* `id` - The id of the database.
+* `default_character_set` - The default_character_set of the database.
+* `default_collation` - The default_collation of the database.
