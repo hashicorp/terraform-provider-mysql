@@ -12,23 +12,65 @@ import (
 )
 
 func TestAccDatabase(t *testing.T) {
-	var dbName string
+	dbName := "terraform_acceptance_test"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccDatabaseCheckDestroy(dbName),
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccDatabaseConfig_basic,
-				Check: testAccDatabaseCheck(
-					"mysql_database.test", &dbName,
+				Config: testAccDatabaseConfig_basic(dbName),
+				Check: testAccDatabaseCheck_basic(
+					"mysql_database.test", dbName,
 				),
 			},
 		},
 	})
 }
 
-func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
+func TestAccDatabase_collationChange(t *testing.T) {
+	dbName := "terraform_acceptance_test"
+
+	charset1 := "latin1"
+	charset2 := "utf8"
+	collation1 := "latin1_bin"
+	collation2 := "utf8_general_ci"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccDatabaseCheckDestroy(dbName),
+		Steps: []resource.TestStep{
+			resource.TestStep{
+				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDatabaseCheck_full(
+						"mysql_database.test", dbName, charset1, collation1,
+					),
+				),
+			},
+			resource.TestStep{
+				PreConfig: func() {
+					db := testAccProvider.Meta().(*providerConfiguration).DB
+					db.Query(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET %s COLLATE %s", dbName, charset2, collation2))
+				},
+				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
+				Check: resource.ComposeTestCheckFunc(
+					testAccDatabaseCheck_full(
+						"mysql_database.test", dbName, charset1, collation1,
+					),
+				),
+			},
+		},
+	})
+}
+
+func testAccDatabaseCheck_basic(rn string, name string) resource.TestCheckFunc {
+	return testAccDatabaseCheck_full(rn, name, "utf8", "utf8_bin")
+}
+
+func testAccDatabaseCheck_full(rn string, name string, charset string, collation string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]
 		if !ok {
@@ -40,7 +82,7 @@ func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
 		}
 
 		db := testAccProvider.Meta().(*providerConfiguration).DB
-		rows, err := db.Query("SHOW CREATE DATABASE terraform_acceptance_test")
+		rows, err := db.Query(fmt.Sprintf("SHOW CREATE DATABASE %s", name))
 		if err != nil {
 			return fmt.Errorf("error reading database: %s", err)
 		}
@@ -53,18 +95,16 @@ func testAccDatabaseCheck(rn string, name *string) resource.TestCheckFunc {
 			return fmt.Errorf("error scanning create statement: %s", err)
 		}
 
-		if strings.Index(createSQL, "CHARACTER SET utf8") == -1 {
-			return fmt.Errorf("database default charset isn't utf8")
+		if strings.Index(createSQL, fmt.Sprintf("CHARACTER SET %s", charset)) == -1 {
+			return fmt.Errorf("database default charset isn't %s", charset)
 		}
-		if strings.Index(createSQL, "COLLATE utf8_bin") == -1 {
-			return fmt.Errorf("database default collation isn't utf8_bin")
+		if strings.Index(createSQL, fmt.Sprintf("COLLATE %s", collation)) == -1 {
+			return fmt.Errorf("database default collation isn't %s", collation)
 		}
 
 		if rows.Next() {
 			return fmt.Errorf("expected 1 row reading database, but got more")
 		}
-
-		*name = rs.Primary.ID
 
 		return nil
 	}
@@ -74,8 +114,8 @@ func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		db := testAccProvider.Meta().(*providerConfiguration).DB
 
-		var name, createSQL string
-		err := db.QueryRow("SHOW CREATE DATABASE terraform_acceptance_test").Scan(&name, &createSQL)
+		var _name, createSQL string
+		err := db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
 		if err == nil {
 			return fmt.Errorf("database still exists after destroy")
 		}
@@ -90,10 +130,15 @@ func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 	}
 }
 
-const testAccDatabaseConfig_basic = `
-resource "mysql_database" "test" {
-    name = "terraform_acceptance_test"
-    default_character_set = "utf8"
-    default_collation = "utf8_bin"
+func testAccDatabaseConfig_basic(name string) string {
+	return testAccDatabaseConfig_full(name, "utf8", "utf8_bin")
 }
-`
+
+func testAccDatabaseConfig_full(name string, charset string, collation string) string {
+	return fmt.Sprintf(`
+resource "mysql_database" "test" {
+    name = "%s"
+    default_character_set = "%s"
+    default_collation = "%s"
+}`, name, charset, collation)
+}
