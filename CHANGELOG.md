@@ -1,4 +1,13 @@
 ## 1.1.1 (Unreleased)
+
+IMPROVEMENTS:
+
+* `resource/user`: Added the `tls_option` attribute, which allows to restrict
+  the MySQL users to a specific MySQL-TLS-Encryption. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/40))
+
+* `resource/gant`: Added the `tls_option` attribute, which allows to restrict
+  the MySQL grant to a specific MySQL-TLS-Encryption. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/40))
+
 ## 1.1.0 (March 28, 2018)
 
 IMPROVEMENTS:

@@ -44,6 +44,11 @@ The following arguments are supported:
   [here](https://dev.mysql.com/doc/refman/5.5/en/grant.html)) for applicable
   privileges.
 
+* `tls_option` - (Optional) An TLS-Option for the GRANT-Statement
+  The Value is suffixed to REQUIRE. F.e. the value 'SSL' will
+  gernate an SQL like this: `GRANT ..... REQUIRE SSL`
+  See https://dev.mysql.com/doc/refman/5.7/en/grant.html
+
 * `grant` - (Optional) Whether to also give the user privileges to grant
   the same privileges to other users.
 

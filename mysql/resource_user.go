@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"errors"
+
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -51,6 +52,13 @@ func resourceUser() *schema.Resource {
 				ForceNew:      true,
 				ConflictsWith: []string{"plaintext_password", "password"},
 			},
+
+			"tls_option": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Default:  "NONE",
+			},
 		},
 	}
 }
@@ -95,6 +103,16 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL = stmtSQL + authStm
 	} else {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
+	}
+
+	requiredVersion, _ := version.NewVersion("5.7.0")
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion.GreaterThan(requiredVersion) {
+		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
 	log.Println("Executing statement:", stmtSQL)
@@ -158,6 +176,27 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 
 		log.Println("Executing query:", stmtSQL)
 		_, err = db.Exec(stmtSQL)
+		if err != nil {
+			return err
+		}
+	}
+
+	requiredVersion, _ := version.NewVersion("5.7.0")
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if d.HasChange("tls_option") && currentVersion.GreaterThan(requiredVersion) {
+		var stmtSQL string
+
+		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s'  REQUIRE %s",
+			d.Get("user").(string),
+			d.Get("host").(string),
+			fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string)))
+
+		log.Println("Executing query:", stmtSQL)
+		_, err := db.Exec(stmtSQL)
 		if err != nil {
 			return err
 		}
