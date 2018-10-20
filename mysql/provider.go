@@ -100,7 +100,7 @@ func quoteIdentifier(in string) string {
 }
 
 func serverVersion(db *sql.DB) (*version.Version, error) {
-	rows, err := db.Query("SELECT VERSION()")
+	rows, err := db.Query("SELECT @@GLOBAL.innodb_version")
 	if err != nil {
 		return nil, err
 	}
