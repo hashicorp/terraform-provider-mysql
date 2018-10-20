@@ -102,9 +102,11 @@ func quoteIdentifier(in string) string {
 
 func serverVersion(db *sql.DB) (*version.Version, error) {
 	rows, err := db.Query("SELECT VERSION()")
+
 	if err != nil {
 		return nil, err
 	}
+
 	if !rows.Next() {
 		return nil, fmt.Errorf("SELECT VERSION() returned an empty set")
 	}
