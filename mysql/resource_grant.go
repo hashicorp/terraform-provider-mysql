@@ -62,6 +62,14 @@ func resourceGrant() *schema.Resource {
 	}
 }
 
+func formatDatabaseName(database string) string {
+	if strings.Compare(database, "*") != 0 && !strings.HasSuffix(database, "`") {
+		return fmt.Sprintf("`%s`", database)
+	}
+
+	return database
+}
+
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
 
@@ -74,13 +82,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 	privileges = strings.Join(privilegesList, ",")
 
-	// checking for database being a asterisk
-	var database string
-	if strings.Compare(d.Get("database").(string), "*") != 0 {
-		database = "`" + d.Get("database").(string) + "`"
-	} else {
-		database = d.Get("database").(string)
-	}
+	database := formatDatabaseName(d.Get("database").(string))
 
 	stmtSQL := fmt.Sprintf("GRANT %s on %s.* TO '%s'@'%s'",
 		privileges,
@@ -100,7 +102,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	user := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database"))
+	user := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database").(string))
 	d.SetId(user)
 
 	return ReadGrant(d, meta)
@@ -126,14 +128,7 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
-
-	// checking for database being a asterisk
-	var database string
-	if strings.Compare(d.Get("database").(string), "*") != 0 {
-		database = "`" + d.Get("database").(string) + "`"
-	} else {
-		database = d.Get("database").(string)
-	}
+	database := formatDatabaseName(d.Get("database").(string))
 
 	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.* FROM '%s'@'%s'",
 		database,
