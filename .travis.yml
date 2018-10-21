@@ -10,8 +10,8 @@ env:
   - DB=mariadb
 
 before_script:
-  - apt-get update
-  - test "${DB}" = "mariadb" && (apt-get install mariadb-server && apt-get remote mysql-server --purge)
+  - sudo apt-get update
+  - test "${DB}" = "mariadb" && (sudo apt-get install mariadb-server && sudo apt-get remote mysql-server --purge)
   - sudo service mysql restart
   - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
 
