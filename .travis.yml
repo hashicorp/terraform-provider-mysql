@@ -14,7 +14,7 @@ before_script:
   - sudo apt-get update
   - test "${DB}" = "mariadb" && (sudo service mysql stop && sudo apt-get install mariadb-server) || echo "No MariaDB"
   - sudo service mysql restart
-  - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';" || echo "No MySQL"
+  - mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - echo 'SELECT VERSION()' | mysql -uroot
 
 script:
