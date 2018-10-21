@@ -12,9 +12,10 @@ env:
   - DB=mariadb
 
 before_script:
-  - sudo service mariadb-server stop
-  - sudo service mysql-server stop
+  - service --status-all
+  - test "${DB}" = "mariadb" && sudo service mariadb-server stop
   - test "${DB}" = "mariadb" && sudo service mariadb-server start 
+  - test "${DB}" = "mysql" && sudo service mysql-server stop
   - test "${DB}" = "mysql" && sudo service mysql-server start 
   - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
 
