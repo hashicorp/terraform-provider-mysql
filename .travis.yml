@@ -3,12 +3,20 @@ sudo: required
 language: go
 services:
   - docker
+addons:
+  mariadb: "10.0"
 go:
-  - "1.8"
   - "1.10.x"
 env:
   - DB=mysql
   - DB=mariadb
+
+before_script:
+  - sudo service mariadb stop
+  - sudo service mysql stop
+  - test "${DB}" = "mariadb" && sudo service mariadb start 
+  - test "${DB}" = "mysql" && sudo service mysql start 
+  - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
@@ -18,7 +26,6 @@ script:
   - export MYSQL_USERNAME=root
   - export MYSQL_ENDPOINT=localhost:3306
   - export MYSQL_PASSWORD=
-  - mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - make testacc
 
 matrix:
