@@ -12,7 +12,7 @@ env:
 before_script:
   - test "${DB}" = "mariadb" && (curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash) || echo "No MariaDB"
   - sudo apt-get update
-  - test "${DB}" = "mariadb" && (sudo service mysql stop && sudo apt-get install mariadb-server mariadb-client libmariadbclient-dev) || echo "No MariaDB"
+  - test "${DB}" = "mariadb" && (sudo service mysql stop && sudo apt-get install mariadb-server) || echo "No MariaDB"
   - sudo service mysql restart
   - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';" || echo "No MySQL"
   - echo 'SELECT VERSION()' | mysql -uroot
