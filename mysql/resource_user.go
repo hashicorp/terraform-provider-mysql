@@ -104,7 +104,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	ver, _ := version.NewVersion("5.7.0")
-	if conf.ServerVersion.GreaterThan(ver) && !isMariaDB(db) {
+	if conf.ServerVersion.GreaterThan(ver) {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
@@ -167,13 +167,13 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	ver, _ := version.NewVersion("5.7.0")
-	if d.HasChange("tls_option") && conf.ServerVersion.GreaterThan(ver) && !isMariaDB(db) {
+	if d.HasChange("tls_option") && conf.ServerVersion.GreaterThan(ver) {
 		var stmtSQL string
 
-		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s'  REQUIRE %s",
+		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' REQUIRE %s",
 			d.Get("user").(string),
 			d.Get("host").(string),
-			fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string)))
+			d.Get("tls_option").(string))
 
 		log.Println("Executing query:", stmtSQL)
 		_, err := conf.DB.Exec(stmtSQL)
