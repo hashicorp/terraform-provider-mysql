@@ -2,23 +2,26 @@ dist: trusty
 sudo: required
 language: go
 services:
-- docker
-- mysql
+  - docker
 go:
-- 1.10.x
+  - "1.8"
+  - "1.10.x"
+env:
+  - DB=mysql
+  - DB=mariadb
 
 script:
-- test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
-- make test
-- make vet
-- make website-test
-- export MYSQL_USERNAME=root
-- export MYSQL_ENDPOINT=localhost:3306
-- export MYSQL_PASSWORD=
-- mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
-- make testacc
+  - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
+  - make test
+  - make vet
+  - make website-test
+  - export MYSQL_USERNAME=root
+  - export MYSQL_ENDPOINT=localhost:3306
+  - export MYSQL_PASSWORD=
+  - mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - make testacc
 
 matrix:
   fast_finish: true
   allow_failures:
-  - go: tip
+    - go: tip
