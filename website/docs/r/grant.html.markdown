@@ -30,6 +30,8 @@ resource "mysql_grant" "jdoe" {
 
 ## Argument Reference
 
+~> **Note:** MySQL removed the `REQUIRE` option from `GRANT` in version 8. `tls_option` is ignored in MySQL 8 and above.
+
 The following arguments are supported:
 
 * `user` - (Required) The name of the user.
