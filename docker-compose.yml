@@ -13,7 +13,7 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=tests
   mariadb10:
-    image: mariadb:10
+    image: mariadb:10.3
     ports:
      - "3310:3306/tcp"
     environment:
