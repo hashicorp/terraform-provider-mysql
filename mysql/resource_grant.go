@@ -20,9 +20,10 @@ func resourceGrant() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"user": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"role"},
 			},
 
 			"role": &schema.Schema{
@@ -33,10 +34,11 @@ func resourceGrant() *schema.Resource {
 			},
 
 			"host": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-				Default:  "localhost",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				Default:       "localhost",
+				ConflictsWith: []string{"role"},
 			},
 
 			"database": &schema.Schema{
