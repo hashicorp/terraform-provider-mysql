@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -91,7 +92,16 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("user").(string),
 		d.Get("host").(string))
 
-	stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
+	// MySQL 8+ doesn't allow REQUIRE on a GRANT statement.
+	requiredVersion, _ := version.NewVersion("5.8")
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion.LessThan(requiredVersion) {
+		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
+	}
 
 	if d.Get("grant").(bool) {
 		stmtSQL += " WITH GRANT OPTION"
@@ -100,7 +110,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	log.Println("Executing statement:", stmtSQL)
 	_, err = db.Exec(stmtSQL)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error runnin SQL (%s): %s", stmtSQL, err)
 	}
 
 	user := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database"))

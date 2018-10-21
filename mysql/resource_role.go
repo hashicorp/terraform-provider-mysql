@@ -60,6 +60,8 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
+	d.Set("name", d.Id())
+
 	return nil
 }
 

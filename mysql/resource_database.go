@@ -118,7 +118,7 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 		// hunt for the default.
 		stmtSQL := "SHOW COLLATION WHERE `Charset` = ? AND `Default` = 'Yes'"
 		var empty interface{}
-		err := db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty)
+		err := db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty, &empty)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				return fmt.Errorf("Charset %s has no default collation", defaultCharset)

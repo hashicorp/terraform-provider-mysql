@@ -132,31 +132,39 @@ func testAccGrantCheckDestroy(s *terraform.State) error {
 
 const testAccGrantConfig_basic = `
 resource "mysql_user" "test" {
-        user = "jdoe"
-				host = "example.com"
-				password = "password"
+  user     = "jdoe"
+  host     = "example.com"
+  password = "password"
+}
+
+resource "mysql_database" "test" {
+  name = "foo"
 }
 
 resource "mysql_grant" "test" {
-        user = "${mysql_user.test.user}"
-        host = "${mysql_user.test.host}"
-        database = "foo"
-        privileges = ["UPDATE", "SELECT"]
+  user       = "${mysql_user.test.user}"
+  host       = "${mysql_user.test.host}"
+  database   = "foo"
+  privileges = ["UPDATE", "SELECT"]
 }
 `
 
 const testAccGrantConfig_ssl = `
 resource "mysql_user" "test" {
-        user = "jdoe"
-				host = "example.com"
-				password = "password"
+  user     = "jdoe"
+  host     = "example.com"
+  password = "password"
+}
+
+resource "mysql_database" "test" {
+  name = "foo"
 }
 
 resource "mysql_grant" "test" {
-        user = "${mysql_user.test.user}"
-        host = "${mysql_user.test.host}"
-        database = "foo"
-		privileges = ["UPDATE", "SELECT"]
-		tls_option = "SSL"
+  user       = "${mysql_user.test.user}"
+  host       = "${mysql_user.test.host}"
+  database   = "foo"
+  privileges = ["UPDATE", "SELECT"]
+  tls_option = "SSL"
 }
 `

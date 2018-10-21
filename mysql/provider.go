@@ -82,11 +82,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	conf := mysql.Config{
-		User:      d.Get("username").(string),
-		Passwd:    d.Get("password").(string),
-		Net:       proto,
-		Addr:      endpoint,
-		TLSConfig: d.Get("tls").(string),
+		User:                 d.Get("username").(string),
+		Passwd:               d.Get("password").(string),
+		Net:                  proto,
+		Addr:                 endpoint,
+		TLSConfig:            d.Get("tls").(string),
+		AllowNativePasswords: true,
 	}
 
 	return &MySQLConfiguration{
