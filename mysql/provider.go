@@ -100,6 +100,16 @@ func quoteIdentifier(in string) string {
 	return fmt.Sprintf("`%s`", identQuoteReplacer.Replace(in))
 }
 
+func isMariaDB(db *sql.DB) bool {
+	var version string
+	err := db.QueryRow("SELECT VERSION()").Scan(&version)
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(version, "MariaDB")
+}
+
 func serverVersion(db *sql.DB) (*version.Version, error) {
 	rows, err := db.Query("SELECT VERSION()")
 	if err != nil {
