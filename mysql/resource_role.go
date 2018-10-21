@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"errors"
-
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -35,9 +32,9 @@ func CreateRole(d *schema.ResourceData, meta interface{}) error {
 	roleName := d.Get("name").(string)
 
 	sql := fmt.Sprintf("CREATE ROLE '%s'", roleName)
-	log.Printf("[DEBUG] SQL: ", sql)
+	log.Printf("[DEBUG] SQL: %s", sql)
 
-	_, err := db.Exec(sql)
+	_, err = db.Exec(sql)
 	if err != nil {
 		return fmt.Errorf("error creating role: %s", err)
 	}
@@ -54,9 +51,9 @@ func ReadRole(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	sql := fmt.Sprintf("SHOW GRANTS FOR '%s'", d.Id())
-	log.Printf("[DEBUG] SQL: ", sql)
+	log.Printf("[DEBUG] SQL: %s", sql)
 
-	_, err := db.Exec(err)
+	_, err = db.Exec(sql)
 	if err != nil {
 		log.Printf("[WARN] Role (%s) not found; removing from state", d.Id())
 		d.SetId("")
@@ -73,9 +70,9 @@ func DeleteRole(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	sql := fmt.Sprintf("DROP ROLE '%s'", d.Get("name").(string))
-	log.Printf("[DEBUG] SQL: ", sql)
+	log.Printf("[DEBUG] SQL: %s", sql)
 
-	_, err = db.Exec(stmtSQL)
+	_, err = db.Exec(sql)
 	if err != nil {
 		return err
 	}
