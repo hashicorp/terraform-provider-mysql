@@ -21,8 +21,15 @@ func resourceGrant() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"user": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
+			},
+
+			"role": &schema.Schema{
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"user", "host"},
 			},
 
 			"host": &schema.Schema{
@@ -47,10 +54,19 @@ func resourceGrant() *schema.Resource {
 
 			"privileges": &schema.Schema{
 				Type:     schema.TypeSet,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
+			},
+
+			"roles": &schema.Schema{
+				Type:          schema.TypeSet,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"privileges"},
+				Elem:          &schema.Schema{Type: schema.TypeString},
+				Set:           schema.HashString,
 			},
 
 			"grant": &schema.Schema{
@@ -70,36 +86,65 @@ func resourceGrant() *schema.Resource {
 	}
 }
 
+func flattenList(list []interface{}) string {
+	var result []string
+	for _, v := range list {
+		result = append(result, v.(string))
+	}
+
+	return strings.Join(result, ", ")
+}
+
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
 	if err != nil {
 		return err
 	}
 
-	// create a comma-delimited string of privileges
-	var privileges string
-	var privilegesList []string
-	vL := d.Get("privileges").(*schema.Set).List()
-	for _, v := range vL {
-		privilegesList = append(privilegesList, v.(string))
-	}
-	privileges = strings.Join(privilegesList, ",")
-
-	stmtSQL := fmt.Sprintf("GRANT %s on %s.%s TO '%s'@'%s'",
-		privileges,
-		d.Get("database").(string),
-		d.Get("table").(string),
-		d.Get("user").(string),
-		d.Get("host").(string))
-
-	// MySQL 8+ doesn't allow REQUIRE on a GRANT statement.
-	requiredVersion, _ := version.NewVersion("5.8")
 	currentVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
 
-	if currentVersion.LessThan(requiredVersion) {
+	requiredVersion, _ := version.NewVersion("8.0.0")
+	hasRoles := currentVersion.GreaterThan(requiredVersion)
+
+	var privilegesOrRoles string
+	if attr, ok := d.GetOk("privileges"); ok {
+		privilegesOrRoles = flattenList(attr.(*schema.Set).List())
+	} else if attr, ok := d.GetOk("roles"); ok {
+		if !hasRoles {
+			return fmt.Errorf("Roles are only supported on MySQL 8 and above")
+		}
+		privilegesOrRoles = flattenList(attr.(*schema.Set).List())
+	} else {
+		return fmt.Errorf("One of privileges or roles is required")
+	}
+
+	user := d.Get("user").(string)
+	host := d.Get("host").(string)
+	role := d.Get("role").(string)
+
+	var userOrRole string
+	if len(user) > 0 && len(host) > 0 {
+		userOrRole = fmt.Sprintf("'%s'@'%s'", user, host)
+	} else if len(role) > 0 {
+		if !hasRoles {
+			return fmt.Errorf("Roles are only supported on MySQL 8 and above")
+		}
+		userOrRole = fmt.Sprintf("'%s'", role)
+	} else {
+		return fmt.Errorf("user with host or a role is required")
+	}
+
+	stmtSQL := fmt.Sprintf("GRANT %s on %s.%s TO %s",
+		privilegesOrRoles,
+		d.Get("database").(string),
+		d.Get("table").(string),
+		userOrRole)
+
+	// MySQL 8+ doesn't allow REQUIRE on a GRANT statement.
+	if !hasRoles {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
@@ -113,8 +158,8 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 		return fmt.Errorf("Error runnin SQL (%s): %s", stmtSQL, err)
 	}
 
-	user := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database"))
-	d.SetId(user)
+	id := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database"))
+	d.SetId(id)
 
 	return ReadGrant(d, meta)
 }
