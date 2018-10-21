@@ -8,12 +8,9 @@ go:
 env:
   - DB=mysql
   - DB=mariadb
-addons:
-  apt:
-    sources:
-      - mariadb-10.3
 
 before_script:
+  - test "${DB}" = "mariadb" && (curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash) || echo "No MariaDB"
   - sudo apt-get update
   - test "${DB}" = "mariadb" && (sudo service mysql stop && sudo apt-get install mariadb-server mariadb-client libmariadbclient-dev) || echo "No MariaDB"
   - sudo service mysql restart
