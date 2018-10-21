@@ -50,11 +50,7 @@ func resourceUserPassword() *schema.Resource {
 func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 	db := meta.(*providerConfiguration).DB
 
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		return fmt.Errorf("Could not create random password: %s", err)
-	}
-
+	uuid := uuid.NewV4()
 	password := uuid.String()
 	pgpKey := d.Get("pgp_key").(string)
 
