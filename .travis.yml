@@ -3,8 +3,6 @@ sudo: required
 language: go
 services:
   - docker
-addons:
-  mariadb: "10.0"
 go:
   - "1.10.x"
 env:
@@ -12,11 +10,9 @@ env:
   - DB=mariadb
 
 before_script:
-  - service --status-all
-  - test "${DB}" = "mariadb" && sudo service mariadb-server stop
-  - test "${DB}" = "mariadb" && sudo service mariadb-server start 
-  - test "${DB}" = "mysql" && sudo service mysql-server stop
-  - test "${DB}" = "mysql" && sudo service mysql-server start 
+  - apt-get update
+  - test "${DB}" = "mariadb" && (apt-get install mariadb-server && apt-get remote mysql-server --purge)
+  - sudo service mysql restart
   - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
 
 script:
