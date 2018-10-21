@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
-
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -118,12 +118,27 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 		// hunt for the default.
 		stmtSQL := "SHOW COLLATION WHERE `Charset` = ? AND `Default` = 'Yes'"
 		var empty interface{}
-		err := db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty, &empty)
+
+		requiredVersion, _ := version.NewVersion("8.0.0")
+		currentVersion, err := serverVersion(db)
 		if err != nil {
-			if err == sql.ErrNoRows {
+			return err
+		}
+
+		// MySQL 8 returns more data in a row.
+		var res error
+		if currentVersion.GreaterThan(requiredVersion) {
+			res = db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty, &empty)
+		} else {
+			res = db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty)
+		}
+
+		if res != nil {
+			if res == sql.ErrNoRows {
 				return fmt.Errorf("Charset %s has no default collation", defaultCharset)
 			}
-			return fmt.Errorf("Error getting default charset: %s, %s", err, defaultCharset)
+
+			return fmt.Errorf("Error getting default charset: %s, %s", res, defaultCharset)
 		}
 	}
 
