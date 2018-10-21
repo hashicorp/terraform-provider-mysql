@@ -21,7 +21,9 @@ func resourceDatabase() *schema.Resource {
 		Update: UpdateDatabase,
 		Read:   ReadDatabase,
 		Delete: DeleteDatabase,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -60,7 +62,7 @@ func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetId(d.Get("name").(string))
 
-	return nil
+	return ReadDatabase(d, meta)
 }
 
 func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
@@ -77,7 +79,7 @@ func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	return nil
+	return ReadDatabase(d, meta)
 }
 
 func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
@@ -125,6 +127,7 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	d.Set("name", name)
 	d.Set("default_character_set", defaultCharset)
 	d.Set("default_collation", defaultCollation)
 
