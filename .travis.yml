@@ -8,12 +8,16 @@ go:
 env:
   - DB=mysql
   - DB=mariadb
+addons:
+  apt:
+    sources:
+      - mariadb-10.0
 
 before_script:
   - sudo apt-get update
-  - test "${DB}" = "mariadb" && sudo apt-get install mariadb-server
+  - test "${DB}" = "mariadb" && (sudo service mysql stop && sudo apt-get install mariadb-server mariadb-client libmariadbclient-dev) || echo "No MariaDB"
   - sudo service mysql restart
-  - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - test "${DB}" = "mysql" && mysql -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';" || echo "No MySQL"
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
