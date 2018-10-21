@@ -11,7 +11,7 @@ env:
 addons:
   apt:
     sources:
-      - mariadb-10.0
+      - mariadb-10.3
 
 before_script:
   - sudo apt-get update
