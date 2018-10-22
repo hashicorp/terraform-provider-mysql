@@ -16,7 +16,8 @@ before_script:
   - docker-compose up -d
   - sleep 20
   - test "${DB}" = "mysql" && (mysql -P $PORT -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
-  - echo 'SELECT VERSION()' | mysql -uroot -h${DB}${VERSION} -P $PORT
+  - export DOCKER_IP=$(docker-machine ip ${DB}${VERSION})
+  - echo 'SELECT VERSION()' | mysql -uroot -h${DOCKER_IP} -P $PORT
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
@@ -24,7 +25,7 @@ script:
   - make vet
   - make website-test
   - export MYSQL_USERNAME=root
-  - export MYSQL_ENDPOINT=${DB}${VERSION}:${PORT}
+  - export MYSQL_ENDPOINT=${DOCKER_IP}:${PORT}
   - export MYSQL_PASSWORD=tests
   - make testacc
 
