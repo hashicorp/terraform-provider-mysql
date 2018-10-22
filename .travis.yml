@@ -6,9 +6,9 @@ services:
 go:
   - "1.10.x"
 env:
-  - DB=mysql VERSION=5 PORT=3005
-  - DB=mysql VERSION=8 PORT=3008
-  - DB=mariadb VERSION=10 PORT=3010
+  - DB=mysql VERSION=5 PORT=3305
+  - DB=mysql VERSION=8 PORT=3308
+  - DB=mariadb VERSION=10 PORT=3310
 
 before_script:
   - docker-compose pull
@@ -16,7 +16,7 @@ before_script:
   - docker-compose up -d
   - sleep 20
   - test "${DB}" = "mysql" && (mysql -P $PORT -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
-  - echo 'SELECT VERSION()' | mysql -uroot -h127.0.0.1 -P $PORT
+  - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P${PORT}
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
