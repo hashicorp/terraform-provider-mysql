@@ -14,6 +14,7 @@ before_script:
   - docker-compose pull
   - docker-compose build
   - docker-compose up -d
+  - sleep 20
   - test "${DB}" = "mysql" && (mysql -P $PORT -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
   - echo 'SELECT VERSION()' | mysql -uroot -P $PORT
 
@@ -26,6 +27,9 @@ script:
   - export MYSQL_ENDPOINT=localhost:$PORT
   - export MYSQL_PASSWORD=
   - make testacc
+
+after_script:
+  - docker-compose down
 
 matrix:
   fast_finish: true
