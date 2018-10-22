@@ -13,6 +13,7 @@ before_script:
   - sleep 20
   - mysql -h127.0.0.1 -P3305 -uroot -ptests -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - mysql -h127.0.0.1 -P3308 -uroot -ptests -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - mysql -h127.0.0.1 -P3310 -uroot -ptests -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P3305
   - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P3308
   - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P3310
