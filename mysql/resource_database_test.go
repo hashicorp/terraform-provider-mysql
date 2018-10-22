@@ -37,29 +37,36 @@ func TestAccDatabase_collationChange(t *testing.T) {
 	collation1 := "latin1_bin"
 	collation2 := "utf8_general_ci"
 
+	resourceName := "mysql_database.test"
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccDatabaseCheckDestroy(dbName),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatabaseCheck_full(
-						"mysql_database.test", dbName, charset1, collation1,
-					),
+					testAccDatabaseCheck_full("mysql_database.test", dbName, charset1, collation1),
 				),
 			},
-			resource.TestStep{
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
 				PreConfig: func() {
-					db := testAccProvider.Meta().(*providerConfiguration).DB
-					db.Query(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET %s COLLATE %s", dbName, charset2, collation2))
+					db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+					if err != nil {
+						return
+					}
+
+					db.Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET %s COLLATE %s", dbName, charset2, collation2))
 				},
 				Config: testAccDatabaseConfig_full(dbName, charset1, collation1),
 				Check: resource.ComposeTestCheckFunc(
-					testAccDatabaseCheck_full(
-						"mysql_database.test", dbName, charset1, collation1,
-					),
+					testAccDatabaseCheck_full(resourceName, dbName, charset1, collation1),
 				),
 			},
 		},
@@ -81,18 +88,15 @@ func testAccDatabaseCheck_full(rn string, name string, charset string, collation
 			return fmt.Errorf("database id not set")
 		}
 
-		db := testAccProvider.Meta().(*providerConfiguration).DB
-		rows, err := db.Query(fmt.Sprintf("SHOW CREATE DATABASE %s", name))
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		if err != nil {
+			return err
+		}
+
+		var _name, createSQL string
+		err = db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
 		if err != nil {
 			return fmt.Errorf("error reading database: %s", err)
-		}
-		defer rows.Close()
-
-		rows.Next()
-		var _name, createSQL string
-		err = rows.Scan(&_name, &createSQL)
-		if err != nil {
-			return fmt.Errorf("error scanning create statement: %s", err)
 		}
 
 		if strings.Index(createSQL, fmt.Sprintf("CHARACTER SET %s", charset)) == -1 {
@@ -102,20 +106,19 @@ func testAccDatabaseCheck_full(rn string, name string, charset string, collation
 			return fmt.Errorf("database default collation isn't %s", collation)
 		}
 
-		if rows.Next() {
-			return fmt.Errorf("expected 1 row reading database, but got more")
-		}
-
 		return nil
 	}
 }
 
 func testAccDatabaseCheckDestroy(name string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		db := testAccProvider.Meta().(*providerConfiguration).DB
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		if err != nil {
+			return err
+		}
 
 		var _name, createSQL string
-		err := db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
+		err = db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", name)).Scan(&_name, &createSQL)
 		if err == nil {
 			return fmt.Errorf("database still exists after destroy")
 		}

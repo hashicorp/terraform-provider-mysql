@@ -4,17 +4,18 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"github.com/hashicorp/go-version"
 
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
 
-type providerConfiguration struct {
-	DB            *sql.DB
-	ServerVersion *version.Version
+type MySQLConfiguration struct {
+	Config *mysql.Config
 }
 
 func Provider() terraform.ResourceProvider {
@@ -38,20 +39,25 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_USERNAME", nil),
-				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
-					value := v.(string)
-					if value == "" {
-						errors = append(errors, fmt.Errorf("Username must not be an empty string"))
-					}
-
-					return
-				},
 			},
 
 			"password": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_PASSWORD", nil),
+			},
+
+			"tls": &schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("MYSQL_TLS_CONFIG", "false"),
+				/*
+					ValidateFunc: validation.StringInSlice([]string{
+						"true",
+						"false",
+						"skip-verify",
+					}, false),
+				*/
 			},
 		},
 
@@ -67,8 +73,6 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
-	var username = d.Get("username").(string)
-	var password = d.Get("password").(string)
 	var endpoint = d.Get("endpoint").(string)
 
 	proto := "tcp"
@@ -76,21 +80,16 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		proto = "unix"
 	}
 
-	// database/sql is the thread-safe by default, so we can
-	// safely re-use the same handle between multiple parallel
-	// operations.
-
-	dataSourceName := fmt.Sprintf("%s:%s@%s(%s)/", username, password, proto, endpoint)
-	db, err := sql.Open("mysql", dataSourceName)
-
-	ver, err := serverVersion(db)
-	if err != nil {
-		return nil, err
+	conf := mysql.Config{
+		User:      d.Get("username").(string),
+		Passwd:    d.Get("password").(string),
+		Net:       proto,
+		Addr:      endpoint,
+		TLSConfig: d.Get("tls").(string),
 	}
 
-	return &providerConfiguration{
-		DB:            db,
-		ServerVersion: ver,
+	return &MySQLConfiguration{
+		Config: &conf,
 	}, nil
 }
 
@@ -101,15 +100,44 @@ func quoteIdentifier(in string) string {
 }
 
 func serverVersion(db *sql.DB) (*version.Version, error) {
-	rows, err := db.Query("SELECT VERSION()")
+	var versionString string
+	err := db.QueryRow("SELECT @@GLOBAL.innodb_version").Scan(&versionString)
 	if err != nil {
 		return nil, err
 	}
-	if !rows.Next() {
-		return nil, fmt.Errorf("SELECT VERSION() returned an empty set")
+
+	return version.NewVersion(versionString)
+}
+
+func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
+	dsn := conf.FormatDSN()
+	var db *sql.DB
+	var err error
+
+	// When provisioning a database server there can often be a lag between
+	// when Terraform thinks it's available and when it is actually available.
+	// This is particularly acute when provisioning a server and then immediately
+	// trying to provision a database on it.
+	retryError := resource.Retry(5*time.Minute, func() *resource.RetryError {
+		db, err = sql.Open("mysql", dsn)
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+
+		// The Go SDK for MySQL doesn't actually connect until a query is ran.
+		// This forces a simple query to run, which runs a connect, which lets
+		// the retry logic do its thing.
+		_, err = serverVersion(db)
+		if err != nil {
+			return resource.RetryableError(err)
+		}
+
+		return nil
+	})
+
+	if retryError != nil {
+		return nil, fmt.Errorf("Could not connect to server: %s", retryError)
 	}
 
-	var versionString string
-	rows.Scan(&versionString)
-	return version.NewVersion(versionString)
+	return db, nil
 }

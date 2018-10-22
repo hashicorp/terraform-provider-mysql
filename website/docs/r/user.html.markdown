@@ -41,29 +41,11 @@ resource "mysql_user" "nologin" {
 The following arguments are supported:
 
 * `user` - (Required) The name of the user.
-
 * `host` - (Optional) The source host of the user. Defaults to "localhost".
-
-* `plaintext_password` - (Optional) The password for the user. This must be
-  provided in plain text, so the data source for it must be secured.
-  An _unsalted_ hash of the provided password is stored in state. Conflicts
-  with `auth_plugin`.
-
-* `password` - (Optional) Deprecated alias of `plaintext_password`, whose
-  value is *stored as plaintext in state*. Prefer to use `plaintext_password`
-  instead, which stores the password as an unsalted hash. Conflicts with
-  `auth_plugin`.
-
-* `auth_plugin` - (Optional) Use an [authentication plugin][ref-auth-plugins]
-  to authenticate the user instead of using password authentication.
-  Description of the fields allowed in the block below. Conflicts with
-  `password` and `plaintext_password`.
-
-* `tls_option` - (Optional) An TLS-Option for the CREATE USER-Statement or ALTER USER
-  The Value is suffixed to REQUIRE. F.e. the value 'SSL' will
-  gernate an SQL like this: `CREATE USER ..... REQUIRE SSL`
-  See https://dev.mysql.com/doc/refman/5.7/en/create-user.html
-  For MySql-Server-Versions less than 5.7 this options will be ignored.
+* `plaintext_password` - (Optional) The password for the user. This must be provided in plain text, so the data source for it must be secured. An _unsalted_ hash of the provided password is stored in state. Conflicts with `auth_plugin`.
+* `password` - (Optional) Deprecated alias of `plaintext_password`, whose value is *stored as plaintext in state*. Prefer to use `plaintext_password` instead, which stores the password as an unsalted hash. Conflicts with `auth_plugin`.
+* `auth_plugin` - (Optional) Use an [authentication plugin][ref-auth-plugins] to authenticate the user instead of using password authentication.  Description of the fields allowed in the block below. Conflicts with `password` and `plaintext_password`.  
+* `tls_option` - (Optional) An TLS-Option for the `CREATE USER` or `ALTER USER` statement. The value is suffixed to `REQUIRE`. A value of 'SSL' will generate a `CREATE USER ... REQUIRE SSL` statement. See the [MYSQL `CREATE USER` documentation](https://dev.mysql.com/doc/refman/5.7/en/create-user.html) for more. Ignored if MySQL version is under 5.7.0.
 
 [ref-auth-plugins]: https://dev.mysql.com/doc/refman/5.7/en/authentication-plugins.html
 
@@ -90,3 +72,7 @@ The following attributes are exported:
 * `password` - The password of the user.
 * `id` - The id of the user created, composed as "username@host".
 * `host` - The host where the user was created.
+
+## Attributes Reference
+
+No further attributes are exported.
