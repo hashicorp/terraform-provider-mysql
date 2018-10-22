@@ -5,28 +5,26 @@ services:
   - docker
 go:
   - "1.10.x"
-env:
-  - DB=mysql VERSION=5 PORT=3305
-  - DB=mysql VERSION=8 PORT=3308
-  - DB=mariadb VERSION=10 PORT=3310
 
 before_script:
   - docker-compose pull
   - docker-compose build
   - docker-compose up -d
   - sleep 20
-  - test "${DB}" = "mysql" && (mysql -h127.0.0.1 -P${PORT} -uroot -ptest -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
-  - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P${PORT}
+  - mysql -h127.0.0.1 -P3305 -uroot -ptests -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - mysql -h127.0.0.1 -P3305 -uroot -ptests -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P3305
+  - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P3308
+  - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P3310
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
   - make test
   - make vet
   - make website-test
-  - export MYSQL_USERNAME=root
-  - export MYSQL_ENDPOINT=127.0.0.1:${PORT}
-  - export MYSQL_PASSWORD=tests
-  - make testacc
+  - MYSQL_USERNAME=root MYSQL_ENDPOINT=127.0.0.1:3305 MYSQL_PASSWORD=tests make testacc
+  - MYSQL_USERNAME=root MYSQL_ENDPOINT=127.0.0.1:3308 MYSQL_PASSWORD=tests make testacc
+  - MYSQL_USERNAME=root MYSQL_ENDPOINT=127.0.0.1:3310 MYSQL_PASSWORD=tests make testacc
 
 after_script:
   - docker-compose down
