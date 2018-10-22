@@ -16,7 +16,7 @@ before_script:
   - docker-compose up -d
   - sleep 20
   - test "${DB}" = "mysql" && (mysql -P $PORT -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
-  - export DOCKER_IP=$(docker-machine ip ${DB}${VERSION})
+  - export DOCKER_IP=$(docker-machine ip "${DB}${VERSION}")
   - echo 'SELECT VERSION()' | mysql -uroot -h${DOCKER_IP} -P $PORT
 
 script:
