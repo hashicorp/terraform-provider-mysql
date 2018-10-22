@@ -64,8 +64,10 @@ func resourceUser() *schema.Resource {
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
-	conf := meta.(*providerConfiguration)
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	var authStm string
 	var auth string
@@ -103,13 +105,18 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
 	}
 
-	ver, _ := version.NewVersion("5.7.0")
-	if conf.ServerVersion.GreaterThan(ver) {
+	requiredVersion, _ := version.NewVersion("5.7.0")
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if currentVersion.GreaterThan(requiredVersion) {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -121,7 +128,10 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
-	conf := meta.(*providerConfiguration)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	var auth string
 	if v, ok := d.GetOk("auth_plugin"); ok {
@@ -146,8 +156,13 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		var stmtSQL string
 
 		/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
+		serverVersion, err := serverVersion(db)
+		if err != nil {
+			return fmt.Errorf("Could not determine server version: %s", err)
+		}
+
 		ver, _ := version.NewVersion("5.7.6")
-		if conf.ServerVersion.LessThan(ver) {
+		if serverVersion.LessThan(ver) {
 			stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
 				d.Get("user").(string),
 				d.Get("host").(string),
@@ -160,14 +175,19 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		log.Println("Executing query:", stmtSQL)
-		_, err := conf.DB.Exec(stmtSQL)
+		_, err = db.Exec(stmtSQL)
 		if err != nil {
 			return err
 		}
 	}
 
-	ver, _ := version.NewVersion("5.7.0")
-	if d.HasChange("tls_option") && conf.ServerVersion.GreaterThan(ver) {
+	requiredVersion, _ := version.NewVersion("5.7.0")
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return err
+	}
+
+	if d.HasChange("tls_option") && currentVersion.GreaterThan(requiredVersion) {
 		var stmtSQL string
 
 		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' REQUIRE %s",
@@ -176,7 +196,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 			d.Get("tls_option").(string))
 
 		log.Println("Executing query:", stmtSQL)
-		_, err := conf.DB.Exec(stmtSQL)
+		_, err := db.Exec(stmtSQL)
 		if err != nil {
 			return err
 		}
@@ -186,7 +206,10 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadUser(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	stmtSQL := fmt.Sprintf("SELECT USER FROM mysql.user WHERE USER='%s'",
 		d.Get("user").(string))
@@ -206,7 +229,10 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteUser(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	stmtSQL := fmt.Sprintf("DROP USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -214,7 +240,7 @@ func DeleteUser(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}

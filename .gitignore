@@ -4,6 +4,7 @@
 example.tf
 terraform.tfplan
 terraform.tfstate
+terraform-provider-mysql
 bin/
 modules-dev/
 /pkg/
