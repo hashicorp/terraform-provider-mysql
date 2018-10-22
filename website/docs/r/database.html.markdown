@@ -57,3 +57,11 @@ The following attributes are exported:
 * `id` - The id of the database.
 * `default_character_set` - The default_character_set of the database.
 * `default_collation` - The default_collation of the database.
+
+## Import
+
+Databases can be imported using their name, e.g.
+
+```
+$ terraform import mysql_database.example my-example-database
+```

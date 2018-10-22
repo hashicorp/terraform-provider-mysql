@@ -78,7 +78,10 @@ func formatDatabaseName(database string) string {
 }
 
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	// create a comma-delimited string of privileges
 	var privileges string
@@ -105,7 +108,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
@@ -117,7 +120,10 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadGrant(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	stmtSQL := fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'",
 		d.Get("user").(string),
@@ -125,17 +131,20 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	rows, err := db.Query(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		d.SetId("")
-	} else {
-		rows.Close()
 	}
+
 	return nil
 }
 
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
+  
 	database := formatDatabaseName(d.Get("database").(string))
 
 	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM '%s'@'%s'",
@@ -145,7 +154,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		d.Get("host").(string))
 
 	log.Println("Executing statement:", stmtSQL)
-	_, err := db.Query(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}

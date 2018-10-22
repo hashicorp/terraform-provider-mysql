@@ -21,7 +21,9 @@ func resourceDatabase() *schema.Resource {
 		Update: UpdateDatabase,
 		Read:   ReadDatabase,
 		Delete: DeleteDatabase,
-
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
@@ -45,37 +47,46 @@ func resourceDatabase() *schema.Resource {
 }
 
 func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	stmtSQL := databaseConfigSQL("CREATE", d)
 	log.Println("Executing statement:", stmtSQL)
 
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
 
 	d.SetId(d.Get("name").(string))
 
-	return nil
+	return ReadDatabase(d, meta)
 }
 
 func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
-
-	stmtSQL := databaseConfigSQL("ALTER", d)
-	log.Println("Executing statement:", stmtSQL)
-
-	_, err := db.Exec(stmtSQL)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	stmtSQL := databaseConfigSQL("ALTER", d)
+	log.Println("Executing statement:", stmtSQL)
+
+	_, err = db.Exec(stmtSQL)
+	if err != nil {
+		return err
+	}
+
+	return ReadDatabase(d, meta)
 }
 
 func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	// This is kinda flimsy-feeling, since it depends on the formatting
 	// of the SHOW CREATE DATABASE output... but this data doesn't seem
@@ -87,7 +98,7 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing query:", stmtSQL)
 	var createSQL, _database string
-	err := db.QueryRow(stmtSQL).Scan(&_database, &createSQL)
+	err = db.QueryRow(stmtSQL).Scan(&_database, &createSQL)
 	if err != nil {
 		if mysqlErr, ok := err.(*mysql.MySQLError); ok {
 			if mysqlErr.Number == unknownDatabaseErrCode {
@@ -116,6 +127,7 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
+	d.Set("name", name)
 	d.Set("default_character_set", defaultCharset)
 	d.Set("default_collation", defaultCollation)
 
@@ -123,13 +135,16 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteDatabase(d *schema.ResourceData, meta interface{}) error {
-	db := meta.(*providerConfiguration).DB
+	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	if err != nil {
+		return err
+	}
 
 	name := d.Id()
 	stmtSQL := "DROP DATABASE " + quoteIdentifier(name)
 	log.Println("Executing statement:", stmtSQL)
 
-	_, err := db.Exec(stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}
