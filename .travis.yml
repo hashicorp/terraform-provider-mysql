@@ -15,7 +15,7 @@ before_script:
   - docker-compose build
   - docker-compose up -d
   - sleep 20
-  - test "${DB}" = "mysql" && (mysql -P $PORT -u root -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
+  - test "${DB}" = "mysql" && (mysql -h127.0.0.1 -P${PORT} -uroot -ptest -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';") || echo "No MySQL"
   - echo 'SELECT VERSION()' | mysql -uroot -ptests -h127.0.0.1 -P${PORT}
 
 script:

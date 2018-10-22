@@ -12,6 +12,7 @@ services:
       - "127.0.0.1:3308:3306/tcp"
     environment:
       - MYSQL_ROOT_PASSWORD=tests
+    entrypoint: ['docker-entrypoint.sh', '--default-authentication-plugin=mysql_native_password']
   mariadb10:
     image: mariadb:10.3
     ports:
