@@ -47,11 +47,7 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-
+	uuid := uuid.NewV4()
 	password := uuid.String()
 	pgpKey := d.Get("pgp_key").(string)
 	encryptionKey, err := encryption.RetrieveGPGKey(pgpKey)
