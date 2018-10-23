@@ -81,11 +81,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	conf := mysql.Config{
-		User:      d.Get("username").(string),
-		Passwd:    d.Get("password").(string),
-		Net:       proto,
-		Addr:      endpoint,
-		TLSConfig: d.Get("tls").(string),
+		User:                 d.Get("username").(string),
+		Passwd:               d.Get("password").(string),
+		Net:                  proto,
+		Addr:                 endpoint,
+		TLSConfig:            d.Get("tls").(string),
+		AllowNativePasswords: true,
 	}
 
 	return &MySQLConfiguration{
@@ -124,10 +125,7 @@ func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
 			return resource.RetryableError(err)
 		}
 
-		// The Go SDK for MySQL doesn't actually connect until a query is ran.
-		// This forces a simple query to run, which runs a connect, which lets
-		// the retry logic do its thing.
-		_, err = serverVersion(db)
+		err = db.Ping()
 		if err != nil {
 			return resource.RetryableError(err)
 		}
