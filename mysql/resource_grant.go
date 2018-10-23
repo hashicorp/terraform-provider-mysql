@@ -144,7 +144,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-  
+
 	database := formatDatabaseName(d.Get("database").(string))
 
 	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM '%s'@'%s'",
