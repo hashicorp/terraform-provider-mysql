@@ -28,6 +28,10 @@ vet:
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
+deps:
+	go mod tidy
+	go mod vendor
+
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
