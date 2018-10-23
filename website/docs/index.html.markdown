@@ -64,9 +64,13 @@ resource "mysql_database" "app" {
 }
 ```
 
-## Proxy Support
+## SOCKS5 Proxy Support
 
 The MySQL provider respects the `ALL_PROXY` and/or `all_proxy` environment variables.
+
+```
+$ export all_proxy="socks5://your.proxy:3306"
+```
 
 ## Argument Reference
 
