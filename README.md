@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/terraform-providers/terraform-provider-mysql.svg?branch=master)](https://travis-ci.org/terraform-providers/terraform-provider-mysql)
+
 Terraform Provider
 ==================
 
