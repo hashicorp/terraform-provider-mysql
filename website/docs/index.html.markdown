@@ -64,6 +64,10 @@ resource "mysql_database" "app" {
 }
 ```
 
+## Proxy Support
+
+The MySQL provider respects the `ALL_PROXY` and/or `all_proxy` environment variables.
+
 ## Argument Reference
 
 The following arguments are supported:
