@@ -58,6 +58,8 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
+# github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
+github.com/golang/snappy
 # github.com/hashicorp/errwrap v1.0.0
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-cleanhttp v0.5.0
@@ -103,8 +105,10 @@ github.com/hashicorp/hil/scanner
 github.com/hashicorp/logutils
 # github.com/hashicorp/terraform v0.11.9
 github.com/hashicorp/terraform/plugin
+github.com/hashicorp/terraform/helper/encryption
 github.com/hashicorp/terraform/helper/resource
 github.com/hashicorp/terraform/helper/schema
+github.com/hashicorp/terraform/helper/validation
 github.com/hashicorp/terraform/terraform
 github.com/hashicorp/terraform/plugin/discovery
 github.com/hashicorp/terraform/config/module
@@ -113,6 +117,7 @@ github.com/hashicorp/terraform/helper/logging
 github.com/hashicorp/terraform/config
 github.com/hashicorp/terraform/config/configschema
 github.com/hashicorp/terraform/helper/hashcode
+github.com/hashicorp/terraform/helper/structure
 github.com/hashicorp/terraform/dag
 github.com/hashicorp/terraform/flatmap
 github.com/hashicorp/terraform/helper/hilmapstructure
@@ -127,10 +132,27 @@ github.com/hashicorp/terraform/svchost/disco
 github.com/hashicorp/terraform/config/hcl2shim
 github.com/hashicorp/terraform/svchost
 github.com/hashicorp/terraform/svchost/auth
+# github.com/hashicorp/vault v0.11.3
+github.com/hashicorp/vault/helper/pgpkeys
+github.com/hashicorp/vault/helper/jsonutil
+github.com/hashicorp/vault/helper/compressutil
 # github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb
 github.com/hashicorp/yamux
 # github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
 github.com/jmespath/go-jmespath
+# github.com/keybase/go-crypto v0.0.0-20181017165231-e696c8039bba
+github.com/keybase/go-crypto/openpgp
+github.com/keybase/go-crypto/openpgp/packet
+github.com/keybase/go-crypto/openpgp/armor
+github.com/keybase/go-crypto/openpgp/errors
+github.com/keybase/go-crypto/openpgp/s2k
+github.com/keybase/go-crypto/brainpool
+github.com/keybase/go-crypto/cast5
+github.com/keybase/go-crypto/curve25519
+github.com/keybase/go-crypto/ed25519
+github.com/keybase/go-crypto/openpgp/ecdh
+github.com/keybase/go-crypto/openpgp/elgamal
+github.com/keybase/go-crypto/ed25519/internal/edwards25519
 # github.com/mattn/go-colorable v0.0.9
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.3
@@ -153,11 +175,16 @@ github.com/mitchellh/mapstructure
 github.com/mitchellh/reflectwalk
 # github.com/oklog/run v1.0.0
 github.com/oklog/run
+# github.com/pierrec/lz4 v2.0.5+incompatible
+github.com/pierrec/lz4
+github.com/pierrec/lz4/internal/xxh32
 # github.com/posener/complete v1.1.1
 github.com/posener/complete
 github.com/posener/complete/cmd/install
 github.com/posener/complete/cmd
 github.com/posener/complete/match
+# github.com/satori/go.uuid v1.2.0
+github.com/satori/go.uuid
 # github.com/ulikunitz/xz v0.5.4
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/xlog

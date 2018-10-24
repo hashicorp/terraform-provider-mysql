@@ -11,7 +11,8 @@ IMPROVEMENTS:
 * Provider now has a `tls` option that configures TSL for server connections. ([#43](https://github.com/terraform-providers/terraform-provider-mysql/issues/43))
 * `r/mysql_user`: Added the `tls_option` attribute, which allows to restrict the MySQL users to a specific MySQL-TLS-Encryption. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/40))
 * `r/mysql_grant`: Added the `tls_option` attribute, which allows to restrict the MySQL grant to a specific MySQL-TLS-Encryption. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/40))
-* `r/mysql_grant`: Added a `table` argument that allows `GRANT` statements to be scoped to a single table.
+* `r/mysql_grant`: Added a `table` argument that allows `GRANT` statements to be scoped to a single table. ([#39](https://github.com/terraform-providers/terraform-provider-mysql/issues/30))
+* `r/mysql_user_password`: Manages a PGP encrypted randomly assigned password for the given MySQL user. ([#50](https://github.com/terraform-providers/terraform-provider-mysql/issues/50))
 
 ## 1.1.0 (March 28, 2018)
 

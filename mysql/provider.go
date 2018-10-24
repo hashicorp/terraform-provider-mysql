@@ -12,6 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/hashicorp/terraform/terraform"
 
 	"golang.org/x/net/proxy"
@@ -54,20 +55,19 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_TLS_CONFIG", "false"),
-				/*
-					ValidateFunc: validation.StringInSlice([]string{
-						"true",
-						"false",
-						"skip-verify",
-					}, false),
-				*/
+				ValidateFunc: validation.StringInSlice([]string{
+					"true",
+					"false",
+					"skip-verify",
+				}, false),
 			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"mysql_database": resourceDatabase(),
-			"mysql_user":     resourceUser(),
-			"mysql_grant":    resourceGrant(),
+			"mysql_database":      resourceDatabase(),
+			"mysql_grant":         resourceGrant(),
+			"mysql_user":          resourceUser(),
+			"mysql_user_password": resourceUserPassword(),
 		},
 
 		ConfigureFunc: providerConfigure,
