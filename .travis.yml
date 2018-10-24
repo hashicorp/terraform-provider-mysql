@@ -26,8 +26,8 @@ script:
   - sudo docker run -e MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD} -d -p 3306:3306 ${DB}:${DB_VERSION}
   - sleep 10
   - sudo docker ps
-  - mysql -hlocalhost --protocol=tcp -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
-  - mysql -hlocalhost --protocol=tcp -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "SELECT VERSION()"
+  - mysql -hlocalhost --protocol=tcp -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - mysql -hlocalhost --protocol=tcp -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "SELECT VERSION()"
   - make testacc
 
 matrix:
