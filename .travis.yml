@@ -13,13 +13,13 @@ script:
   - make vet
   - make website-test
   - sudo service mysql stop
-  - docker run --rm --name mysql -e MYSQL_ROOT_PASSWORD=tests -d -p 127.0.0.1:3306:3306 ${DB}:${DB_VERSION}
-  - sleep 10
   - export MYSQL_USERNAME=root
   - export MYSQL_ENDPOINT=127.0.0.1:3306
   - export MYSQL_PASSWORD=tests
-  - mysql -h127.0.0.1 -uroot -ptests -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
-  - mysql -h127.0.0.1 -uroot -ptests -e "SELECT VERSION()"
+  - docker run --rm --name mysql -e MYSQL_ROOT_PASSWORD=$MYSQL_PASSWORD -d -p ${MYSQL_ENDPOING}:3306 ${DB}:${DB_VERSION}
+  - while ! mysqladmin ping -uroot -h127.0.0.1 -P3306 -p${MYSQL_PASSWORD}; do echo "Sleeping for a bit..." && sleep 5; done
+  - mysql -h127.0.0.1 -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - mysql -h127.0.0.1 -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "SELECT VERSION()"
   - make testacc
 
 matrix:
