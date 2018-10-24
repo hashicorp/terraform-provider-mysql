@@ -4,8 +4,8 @@ language: go
 go:
   - 1.10.x
 env:
-  - DB=mysql VERSION=5.7
-  - DB=mysql VERSION=8.0
+  - DB=mysql DB_VERSION=5.7
+  - DB=mysql DB_VERSION=8.0
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
@@ -13,8 +13,8 @@ script:
   - make vet
   - make website-test
   - sudo service mysql stop
-  - docker run --rm --name mysql -e MYSQL_ROOT_PASSWORD=tests -d -p 127.0.0.1:3306:3306 ${DB}:${VERSION}
-  - sleep 5
+  - docker run --rm --name mysql -e MYSQL_ROOT_PASSWORD=tests -d -p 127.0.0.1:3306:3306 ${DB}:${DB_VERSION}
+  - sleep 10
   - export MYSQL_USERNAME=root
   - export MYSQL_ENDPOINT=127.0.0.1:3306
   - export MYSQL_PASSWORD=tests
