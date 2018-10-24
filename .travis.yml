@@ -1,11 +1,18 @@
 dist: trusty
+
 sudo: required
+
 language: go
+
 go:
   - 1.10.x
+
 env:
   - DB=mysql DB_VERSION=5.7
   - DB=mysql DB_VERSION=8.0
+
+services:
+  - docker
 
 script:
   - test -d /home/travis/gopath/src/github.com/terraform-providers || mv $(dirname $PWD) /home/travis/gopath/src/github.com/terraform-providers
