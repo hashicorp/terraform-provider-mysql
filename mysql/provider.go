@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/hashicorp/terraform/terraform"
 )
 
@@ -51,21 +52,20 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_TLS_CONFIG", "false"),
-				/*
-					ValidateFunc: validation.StringInSlice([]string{
-						"true",
-						"false",
-						"skip-verify",
-					}, false),
-				*/
+				ValidateFunc: validation.StringInSlice([]string{
+					"true",
+					"false",
+					"skip-verify",
+				}, false),
 			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"mysql_database": resourceDatabase(),
-			"mysql_user":     resourceUser(),
-			"mysql_grant":    resourceGrant(),
-			"mysql_role":     resourceRole(),
+			"mysql_database":      resourceDatabase(),
+			"mysql_grant":         resourceGrant(),
+			"mysql_role":          resourceRole(),
+			"mysql_user":          resourceUser(),
+			"mysql_user_password": resourceUserPassword(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -126,10 +126,7 @@ func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
 			return resource.RetryableError(err)
 		}
 
-		// The Go SDK for MySQL doesn't actually connect until a query is ran.
-		// This forces a simple query to run, which runs a connect, which lets
-		// the retry logic do its thing.
-		_, err = serverVersion(db)
+		err = db.Ping()
 		if err != nil {
 			return resource.RetryableError(err)
 		}
