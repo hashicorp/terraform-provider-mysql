@@ -16,8 +16,8 @@ script:
   - export MYSQL_USERNAME=root
   - export MYSQL_ENDPOINT=127.0.0.1:3306
   - export MYSQL_PASSWORD=tests
-  - docker run --rm --name mysql -e MYSQL_ROOT_PASSWORD=$MYSQL_PASSWORD -d -p ${MYSQL_ENDPOING}:3306 ${DB}:${DB_VERSION}
-  - while ! mysqladmin ping -uroot -h127.0.0.1 -P3306 -p${MYSQL_PASSWORD}; do echo "Sleeping for a bit..." && sleep 5; done
+  - docker run --net=host -p 3306:3306 -d mysql:5.5 -e MYSQL_ROOT_PASSWORD=$MYSQL_PASSWORD 
+  - mysqladmin -h127.0.0.1 --count=5 --sleep=5 ping -u{MYSQL_USERNAME -p${MYSQL_PASSWORD}
   - mysql -h127.0.0.1 -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - mysql -h127.0.0.1 -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "SELECT VERSION()"
   - make testacc
