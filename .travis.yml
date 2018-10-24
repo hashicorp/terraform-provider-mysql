@@ -14,12 +14,13 @@ script:
   - make website-test
   - sudo service mysql stop
   - export MYSQL_USERNAME=root
-  - export MYSQL_ENDPOINT=127.0.0.1:3306
-  - export MYSQL_PASSWORD=tests
-  - docker run --net=host -p 3306:3306 -d mysql:5.5 -e MYSQL_ROOT_PASSWORD=$MYSQL_PASSWORD 
-  - while ! mysqladmin ping -h127.0.0.1 -u{MYSQL_USERNAME -p${MYSQL_PASSWORD} --silent; do sleep 1; done
-  - mysql -h127.0.0.1 -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
-  - mysql -h127.0.0.1 -u{MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "SELECT VERSION()"
+  - export MYSQL_ENDPOINT=localhost:3306
+  - export MYSQL_PASSWORD=
+  - sudo docker run -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -d -p 3306:3306 ${DB}:${DB_VERSION}
+  - sleep 10
+  - sudo docker ps
+  - mysql --protocol=tcp -u{MYSQL_USERNAME} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - mysql --protocol=tcp -u{MYSQL_USERNAME} -e "SELECT VERSION()"
   - make testacc
 
 matrix:
