@@ -20,11 +20,14 @@ script:
   - make vet
   - make website-test
   - sudo service mysql stop
+  - export MYSQL_HOST=127.0.0.1
+  - export MYSQL_PORT=3306
   - export MYSQL_USERNAME=root
-  - export MYSQL_ENDPOINT=127.0.0.1:3306
+  - export MYSQL_ENDPOINT="${MYSQL_HOST}:${MYSQL_PORT}"
   - export MYSQL_PASSWORD=tests
-  - ./.travis/install-and-init-db.sh
-  - mysql -h127.0.0.1 -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - docker pull $DB
+  - docker run -d -p ${MYSQL_HOST}:${MYSQL_PORT}:${MYSQL_PORT} $DB
+  - mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - make testacc
 
 matrix:
