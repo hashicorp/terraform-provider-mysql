@@ -28,7 +28,11 @@ script:
   - docker pull $DB
   - docker run -d -p ${MYSQL_HOST}:${MYSQL_PORT}:${MYSQL_PORT} -e MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD} $DB
   - docker ps -a
-  - mysqladmin  -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} ping --count=5 --sleep=5
+ - |
+    while ! mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e 'SELECT 1' > /dev/null 2>&1; do
+      echo 'Waiting for MySQL...'
+      sleep 1;
+    done;
   - mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - make testacc
 
