@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 )
@@ -36,6 +37,75 @@ func TestAccGrant(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "tls_option", "SSL"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGrant_role(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+			if err != nil {
+				return
+			}
+
+			requiredVersion, _ := version.NewVersion("8.0.0")
+			currentVersion, err := serverVersion(db)
+			if err != nil {
+				return
+			}
+
+			if currentVersion.LessThan(requiredVersion) {
+				t.Skip("Roles require MySQL 8+")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccGrantCheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGrantConfig_role,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("mysql_grant.developer", "role", "developer"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccGrant_roleToUser(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+			if err != nil {
+				return
+			}
+
+			requiredVersion, _ := version.NewVersion("8.0.0")
+			currentVersion, err := serverVersion(db)
+			if err != nil {
+				return
+			}
+
+			if currentVersion.LessThan(requiredVersion) {
+				t.Skip("Roles require MySQL 8+")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccGrantCheckDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccGrantConfig_roleToUser,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("mysql_grant.test", "user", "jdoe"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "roles.#", "1"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "roles.0", "developer"),
 				),
 			},
 		},
@@ -134,7 +204,6 @@ const testAccGrantConfig_basic = `
 resource "mysql_user" "test" {
   user     = "jdoe"
   host     = "example.com"
-  password = "password"
 }
 
 resource "mysql_database" "test" {
@@ -153,7 +222,6 @@ const testAccGrantConfig_ssl = `
 resource "mysql_user" "test" {
   user     = "jdoe"
   host     = "example.com"
-  password = "password"
 }
 
 resource "mysql_database" "test" {
@@ -166,5 +234,42 @@ resource "mysql_grant" "test" {
   database   = "foo"
   privileges = ["UPDATE", "SELECT"]
   tls_option = "SSL"
+}
+`
+
+const testAccGrantConfig_role = `
+resource "mysql_database" "test" {
+  name = "foo"
+}
+
+resource "mysql_role" "developer" {
+  name = "developer"
+}
+
+resource "mysql_grant" "developer" {
+  role       = "${mysql_role.developer.name}"
+  database   = "${mysql_database.test.name}"
+  privileges = ["SELECT", "UPDATE"]
+}
+`
+
+const testAccGrantConfig_roleToUser = `
+resource "mysql_database" "test" {
+  name = "foo"
+}
+
+resource "mysql_user" "jdoe" {
+  user     = "jdoe"
+  host     = "example.com"
+}
+
+resource "mysql_role" "developer" {
+  name = "developer"
+}
+
+resource "mysql_grant" "developer" {
+  user     = "${mysql_user.jdoe.user}"
+  host     = "${mysql_user.jdoe.host}"
+  roles    = ["${mysql_role.developer.name}"]
 }
 `
