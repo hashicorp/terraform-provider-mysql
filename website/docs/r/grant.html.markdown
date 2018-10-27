@@ -11,7 +11,7 @@ description: |-
 The ``mysql_grant`` resource creates and manages privileges given to
 a user on a MySQL server.
 
-## Example Usage
+## Granting Privileges to a User
 
 ```hcl
 resource "mysql_user" "jdoe" {
@@ -28,15 +28,65 @@ resource "mysql_grant" "jdoe" {
 }
 ```
 
+## Granting Privileges to a Role
+
+```hcl
+resource "mysql_role" "developer" {
+  name = "developer"
+}
+
+resource "mysql_grant" "developer" {
+  role       = "${mysql_role.developer.name}"
+  database   = "app"
+  privileges = ["SELECT", "UPDATE"]
+}
+```
+
+## Adding a Role to a User
+
+```hcl
+resource "mysql_user" "jdoe" {
+  user     = "jdoe"
+  host     = "example.com"
+  password = "password"
+}
+
+resource "mysql_role" "developer" {
+  name = "developer"
+}
+
+resource "mysql_grant" "developer" {
+  user     = "${mysql_user.jdoe.user}"
+  host     = "${mysql_user.jdoe.host}"
+  database = "app"
+  roles    = ["${mysql_role.developer.name}"]
+}
+```
+
+<<<<<<< HEAD
 ## Argument Reference
+
+~> **Note:** MySQL removed the `REQUIRE` option from `GRANT` in version 8. `tls_option` is ignored in MySQL 8 and above.
+
+~> **Note:** Attributes `role` and `roles` are only supported in MySQL 8 and above.
+
 
 The following arguments are supported:
 
+* `user` - (Optional) The name of the user. Conflicts with `role`.
+* `host` - (Optional) The source host of the user. Defaults to "localhost". Conflicts with `role`.
+* `role` - (Optional) The role to grant `privileges` to. Conflicts with `user` and `host`.
+* `database` - (Required) The database to grant privileges on.
+* `table` - (Optional) Which table to grant `privileges` on. Defaults to `*`, which is all tables.
+* `privileges` - (Optional) A list of privileges to grant to the user. Refer to a list of privileges (such as [here](https://dev.mysql.com/doc/refman/5.5/en/grant.html)) for applicable privileges. Conflicts with `roles`.
+* `roles` - (Optional) A list of rols to grant to the user. Conflicts with `privileges`.
+=======
 * `user` - (Required) The name of the user.
 * `host` - (Optional) The source host of the user. Defaults to "localhost".
 * `database` - (Required) The database to grant privileges on.
 * `table` - (Optional) Which table to grant `privileges` on. Defaults to `*`, which is all tables.
 * `privileges` - (Required) A list of privileges to grant to the user. Refer to a list of privileges (such as [here](https://dev.mysql.com/doc/refman/5.5/en/grant.html)) for applicable privileges.
+>>>>>>> master
 * `tls_option` - (Optional) An TLS-Option for the `GRANT` statement. The value is suffixed to `REQUIRE`. A value of 'SSL' will generate a `GRANT ... REQUIRE SSL` statement. See the [MYSQL `GRANT` documentation](https://dev.mysql.com/doc/refman/5.7/en/grant.html) for more. Ignored if MySQL version is under 5.7.0.
 * `grant` - (Optional) Whether to also give the user privileges to grant the same privileges to other users.
 
