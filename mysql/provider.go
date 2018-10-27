@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/hashicorp/terraform/terraform"
+
+	"golang.org/x/net/proxy"
 )
 
 type MySQLConfiguration struct {
@@ -88,6 +91,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		TLSConfig:            d.Get("tls").(string),
 		AllowNativePasswords: true,
 	}
+
+	dialer := proxy.FromEnvironment()
+	mysql.RegisterDial("tcp", func(network string) (net.Conn, error) {
+		return dialer.Dial("tcp", network)
+	})
 
 	return &MySQLConfiguration{
 		Config: &conf,

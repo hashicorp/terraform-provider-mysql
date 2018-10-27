@@ -209,6 +209,8 @@ golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal
 # golang.org/x/net v0.0.0-20181017193950-04a2e542c03f
+golang.org/x/net/proxy
+golang.org/x/net/internal/socks
 golang.org/x/net/context
 golang.org/x/net/html
 golang.org/x/net/http2

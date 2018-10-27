@@ -32,5 +32,5 @@ require (
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/zclconf/go-cty v0.0.0-20181017232614-01c5aba823a6 // indirect
 	golang.org/x/crypto v0.0.0-20181015023909-0c41d7ab0a0e // indirect
-	golang.org/x/net v0.0.0-20181017193950-04a2e542c03f // indirect
+	golang.org/x/net v0.0.0-20181017193950-04a2e542c03f
 )
