@@ -24,17 +24,17 @@ script:
   - export MYSQL_PORT=3306
   - export MYSQL_USERNAME=root
   - export MYSQL_ENDPOINT="${MYSQL_HOST}:${MYSQL_PORT}"
-  - export MYSQL_PASSWORD=tests
+  - export MYSQL_PASSWORD=''
   - docker pull $DB
-  - docker run -d -p ${MYSQL_HOST}:${MYSQL_PORT}:${MYSQL_PORT} -e MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD} $DB
+  - docker run -d -p ${MYSQL_HOST}:${MYSQL_PORT}:${MYSQL_PORT} -e MYSQL_ALLOW_EMPTY_PASSWORD MYSQL_ROOT_PASSWORD=''
   - docker ps -a
 #    while ! mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e 'SELECT 1' > /dev/null 2>&1; do
   - |
-    while ! mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e 'SELECT 1'; do
+    while ! mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -e 'SELECT 1'; do
       echo 'Waiting for MySQL...'
       sleep 1;
     done;
-  - mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -p${MYSQL_PASSWORD} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
+  - mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - make testacc
 
 matrix:
