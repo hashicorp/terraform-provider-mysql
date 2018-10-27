@@ -43,7 +43,7 @@ func resourceGrant() *schema.Resource {
 
 			"database": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				Optional: true,
 				ForceNew: true,
 			},
 
@@ -134,25 +134,29 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	user := d.Get("user").(string)
 	host := d.Get("host").(string)
 	role := d.Get("role").(string)
+	database := formatDatabaseName(d.Get("database").(string))
 
-	var userOrRole string
+	var (
+		grantOn    string
+		userOrRole string
+	)
+
 	if len(user) > 0 && len(host) > 0 {
 		userOrRole = fmt.Sprintf("'%s'@'%s'", user, host)
+		grantOn = fmt.Sprintf(" on %s.%s", database, d.Get("table").(string))
 	} else if len(role) > 0 {
 		if !hasRoles {
 			return fmt.Errorf("Roles are only supported on MySQL 8 and above")
 		}
 		userOrRole = fmt.Sprintf("'%s'", role)
+		grantOn = ""
 	} else {
 		return fmt.Errorf("user with host or a role is required")
 	}
 
-	database := formatDatabaseName(d.Get("database").(string))
-
-	stmtSQL := fmt.Sprintf("GRANT %s on %s.%s TO %s",
+	stmtSQL := fmt.Sprintf("GRANT %s%s TO %s",
 		privilegesOrRoles,
-		database,
-		d.Get("table").(string),
+		grantOn,
 		userOrRole)
 
 	// MySQL 8+ doesn't allow REQUIRE on a GRANT statement.

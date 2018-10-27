@@ -68,8 +68,7 @@ func TestAccGrant_role(t *testing.T) {
 			{
 				Config: testAccGrantConfig_role,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("mysql_grant.developer", "role", "developer"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
+					resource.TestCheckResourceAttr("mysql_grant.test", "role", "developer"),
 				),
 			},
 		},
@@ -103,7 +102,6 @@ func TestAccGrant_roleToUser(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("mysql_grant.test", "user", "jdoe"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "host", "example.com"),
-					resource.TestCheckResourceAttr("mysql_grant.test", "database", "foo"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "roles.#", "1"),
 					resource.TestCheckResourceAttr("mysql_grant.test", "roles.0", "developer"),
 				),
@@ -246,7 +244,7 @@ resource "mysql_role" "developer" {
   name = "developer"
 }
 
-resource "mysql_grant" "developer" {
+resource "mysql_grant" "test" {
   role       = "${mysql_role.developer.name}"
   database   = "${mysql_database.test.name}"
   privileges = ["SELECT", "UPDATE"]
@@ -267,7 +265,7 @@ resource "mysql_role" "developer" {
   name = "developer"
 }
 
-resource "mysql_grant" "developer" {
+resource "mysql_grant" "test" {
   user     = "${mysql_user.jdoe.user}"
   host     = "${mysql_user.jdoe.host}"
   roles    = ["${mysql_role.developer.name}"]
