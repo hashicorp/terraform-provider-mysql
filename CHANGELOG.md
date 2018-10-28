@@ -8,11 +8,14 @@ BUG FIXES:
 
 IMPROVEMENTS:
 
-* Provider now supports MySQL 8. ([#48](https://github.com/terraform-providers/terraform-provider-mysql/issues/48))
+* Provider now supports MySQL 8. ([#53](https://github.com/terraform-providers/terraform-provider-mysql/issues/53))
+* Acceptance tests now ran against MySQL 5.6, 5.7, and 8.0.
 * Provider now has a `tls` argument that configures TSL for server connections. ([#43](https://github.com/terraform-providers/terraform-provider-mysql/issues/43))
 * `r/mysql_user`: Added the `tls_option` argument, which allows to restrict the MySQL users to a specific MySQL-TLS-Encryption. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/40))
 * `r/mysql_grant`: Added the `tls_option` argument, which allows to restrict the MySQL grant to a specific MySQL-TLS-Encryption. ([#26](https://github.com/terraform-providers/terraform-provider-mysql/issues/40))
 * `r/mysql_grant`: Added a `table` argument that allows `GRANT` statements to be scoped to a single table. ([#39](https://github.com/terraform-providers/terraform-provider-mysql/issues/30))
+* `r/mysql_grant`: Added a `role` argument that allows `GRANT` assign privileges to roles. ([#53](https://github.com/terraform-providers/terraform-provider-mysql/issues/53))
+* `r/mysql_grant`: Added a `roles` argument that allows `GRANT` assign roles to a user. ([#53](https://github.com/terraform-providers/terraform-provider-mysql/issues/53))
 * `r/mysql_user_password`: Manages a PGP encrypted randomly assigned password for the given MySQL user. ([#50](https://github.com/terraform-providers/terraform-provider-mysql/issues/50))
 * `r/mysql_role`: New resource for managing MySQL roles. ([#48](https://github.com/terraform-providers/terraform-provider-mysql/issues/48))
 
