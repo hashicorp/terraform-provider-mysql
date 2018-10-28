@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -43,7 +44,7 @@ func resourceGrant() *schema.Resource {
 
 			"database": &schema.Schema{
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 				ForceNew: true,
 			},
 
@@ -88,10 +89,10 @@ func resourceGrant() *schema.Resource {
 	}
 }
 
-func flattenList(list []interface{}) string {
+func flattenList(list []interface{}, template string) string {
 	var result []string
 	for _, v := range list {
-		result = append(result, v.(string))
+		result = append(result, fmt.Sprintf(template, v.(string)))
 	}
 
 	return strings.Join(result, ", ")
@@ -105,28 +106,59 @@ func formatDatabaseName(database string) string {
 	return database
 }
 
+func userOrRole(user string, host string, role string, hasRoles bool) (string, bool, error) {
+	if len(user) > 0 && len(host) > 0 {
+		return fmt.Sprintf("'%s'@'%s'", user, host), false, nil
+	} else if len(role) > 0 {
+		if !hasRoles {
+			return "", false, fmt.Errorf("Roles are only supported on MySQL 8 and above")
+		}
+
+		return fmt.Sprintf("'%s'", role), true, nil
+	} else {
+		return "", false, fmt.Errorf("user with host or a role is required")
+	}
+}
+
+func supportsRoles(db *sql.DB) (bool, error) {
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return false, err
+	}
+
+	requiredVersion, _ := version.NewVersion("8.0.0")
+	hasRoles := currentVersion.GreaterThan(requiredVersion)
+	return hasRoles, nil
+}
+
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
 	if err != nil {
 		return err
 	}
 
-	currentVersion, err := serverVersion(db)
+	hasRoles, err := supportsRoles(db)
 	if err != nil {
 		return err
 	}
 
-	requiredVersion, _ := version.NewVersion("8.0.0")
-	hasRoles := currentVersion.GreaterThan(requiredVersion)
+	var (
+		privilegesOrRoles string
+		grantOn           string
+	)
 
-	var privilegesOrRoles string
+	hasPrivs := false
+	rolesGranted := 0
 	if attr, ok := d.GetOk("privileges"); ok {
-		privilegesOrRoles = flattenList(attr.(*schema.Set).List())
+		privilegesOrRoles = flattenList(attr.(*schema.Set).List(), "%s")
+		hasPrivs = true
 	} else if attr, ok := d.GetOk("roles"); ok {
 		if !hasRoles {
 			return fmt.Errorf("Roles are only supported on MySQL 8 and above")
 		}
-		privilegesOrRoles = flattenList(attr.(*schema.Set).List())
+		listOfRoles := attr.(*schema.Set).List()
+		rolesGranted = len(listOfRoles)
+		privilegesOrRoles = flattenList(listOfRoles, "'%s'")
 	} else {
 		return fmt.Errorf("One of privileges or roles is required")
 	}
@@ -134,24 +166,16 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	user := d.Get("user").(string)
 	host := d.Get("host").(string)
 	role := d.Get("role").(string)
+
+	userOrRole, isRole, err := userOrRole(user, host, role, hasRoles)
+	if err != nil {
+		return err
+	}
+
 	database := formatDatabaseName(d.Get("database").(string))
 
-	var (
-		grantOn    string
-		userOrRole string
-	)
-
-	if len(user) > 0 && len(host) > 0 {
-		userOrRole = fmt.Sprintf("'%s'@'%s'", user, host)
-		grantOn = fmt.Sprintf(" on %s.%s", database, d.Get("table").(string))
-	} else if len(role) > 0 {
-		if !hasRoles {
-			return fmt.Errorf("Roles are only supported on MySQL 8 and above")
-		}
-		userOrRole = fmt.Sprintf("'%s'", role)
-		grantOn = ""
-	} else {
-		return fmt.Errorf("user with host or a role is required")
+	if (!isRole || hasPrivs) && rolesGranted == 0 {
+		grantOn = fmt.Sprintf(" ON %s.%s", database, d.Get("table").(string))
 	}
 
 	stmtSQL := fmt.Sprintf("GRANT %s%s TO %s",
@@ -164,17 +188,21 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
-	if d.Get("grant").(bool) {
+	if !hasRoles && !isRole && d.Get("grant").(bool) {
 		stmtSQL += " WITH GRANT OPTION"
 	}
 
 	log.Println("Executing statement:", stmtSQL)
 	_, err = db.Exec(stmtSQL)
 	if err != nil {
-		return fmt.Errorf("Error runnin SQL (%s): %s", stmtSQL, err)
+		return fmt.Errorf("Error running SQL (%s): %s", stmtSQL, err)
 	}
 
-	id := fmt.Sprintf("%s@%s:%s", d.Get("user").(string), d.Get("host").(string), d.Get("database").(string))
+	id := fmt.Sprintf("%s@%s:%s", user, host, database)
+	if isRole {
+		id = fmt.Sprintf("%s:%s", role, database)
+	}
+
 	d.SetId(id)
 
 	return ReadGrant(d, meta)
@@ -186,14 +214,27 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	stmtSQL := fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'",
-		d.Get("user").(string),
-		d.Get("host").(string))
-
-	log.Println("Executing statement:", stmtSQL)
-
-	_, err = db.Exec(stmtSQL)
+	hasRoles, err := supportsRoles(db)
 	if err != nil {
+		return err
+	}
+
+	userOrRole, _, err := userOrRole(
+		d.Get("user").(string),
+		d.Get("host").(string),
+		d.Get("role").(string),
+		hasRoles)
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf("SHOW GRANTS FOR %s", userOrRole)
+
+	log.Println("[DEBUG] SQL:", sql)
+
+	_, err = db.Exec(sql)
+	if err != nil {
+		log.Printf("[WARN] GRANT not found for %s - removing from state", userOrRole)
 		d.SetId("")
 	}
 
@@ -208,28 +249,46 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 
 	database := formatDatabaseName(d.Get("database").(string))
 
-	stmtSQL := fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM '%s'@'%s'",
-		database,
-		d.Get("table").(string),
-		d.Get("user").(string),
-		d.Get("host").(string))
-
-	log.Println("Executing statement:", stmtSQL)
-	_, err = db.Exec(stmtSQL)
+	hasRoles, err := supportsRoles(db)
 	if err != nil {
 		return err
 	}
 
-	stmtSQL = fmt.Sprintf("REVOKE ALL ON %s.%s FROM '%s'@'%s'",
-		database,
-		d.Get("table").(string),
+	userOrRole, isRole, err := userOrRole(
 		d.Get("user").(string),
-		d.Get("host").(string))
-
-	log.Println("Executing statement:", stmtSQL)
-	_, err = db.Exec(stmtSQL)
+		d.Get("host").(string),
+		d.Get("role").(string),
+		hasRoles)
 	if err != nil {
 		return err
+	}
+
+	roles := d.Get("roles").(*schema.Set)
+
+	var sql string
+	if !isRole && len(roles.List()) == 0 {
+		sql = fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM %s",
+			database,
+			d.Get("table").(string),
+			userOrRole)
+
+		log.Printf("[DEBUG] SQL: %s", sql)
+		_, err = db.Exec(sql)
+		if err != nil {
+			return fmt.Errorf("error revoking GRANT (%s): %s", sql, err)
+		}
+	}
+
+	whatToRevoke := fmt.Sprintf("ALL ON %s.%s", database, d.Get("table").(string))
+	if len(roles.List()) > 0 {
+		whatToRevoke = flattenList(roles.List(), "'%s'")
+	}
+
+	sql = fmt.Sprintf("REVOKE %s FROM %s", whatToRevoke, userOrRole)
+	log.Printf("[DEBUG] SQL: %s", sql)
+	_, err = db.Exec(sql)
+	if err != nil {
+		return fmt.Errorf("error revoking ALL (%s): %s", sql, err)
 	}
 
 	return nil
