@@ -1,4 +1,4 @@
-## 1.5.0 (Unreleased)
+## 1.5.0 (November 07, 2018)
 
 BUG FIXES:
 
