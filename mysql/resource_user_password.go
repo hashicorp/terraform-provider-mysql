@@ -2,6 +2,8 @@ package mysql
 
 import (
 	"fmt"
+
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/encryption"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/satori/go.uuid"
@@ -60,11 +62,24 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 	}
 	d.Set("key_fingerprint", fingerprint)
 	d.Set("encrypted_password", encrypted)
-	stmtSQL := fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
+
+	requiredVersion, _ := version.NewVersion("8.0.0")
+	currentVersion, err := serverVersion(db)
+	if err != nil {
+		return err
+	}
+
+	passSQL := fmt.Sprintf("'%s'", password)
+	if currentVersion.LessThan(requiredVersion) {
+		passSQL = fmt.Sprintf("PASSWORD(%s)", passSQL)
+	}
+
+	sql := fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = %s",
 		d.Get("user").(string),
 		d.Get("host").(string),
-		password)
-	_, err = db.Exec(stmtSQL)
+		passSQL)
+
+	_, err = db.Exec(sql)
 	if err != nil {
 		return err
 	}
