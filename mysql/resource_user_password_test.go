@@ -11,7 +11,7 @@ func TestAccUserPassword_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccUserCheckDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccUserPasswordConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserExists("mysql_user.test"),

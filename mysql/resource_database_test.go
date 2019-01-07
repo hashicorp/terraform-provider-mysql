@@ -19,7 +19,7 @@ func TestAccDatabase(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccDatabaseCheckDestroy(dbName),
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDatabaseConfig_basic(dbName),
 				Check: testAccDatabaseCheck_basic(
 					"mysql_database.test", dbName,

@@ -15,12 +15,12 @@ func resourceUserPassword() *schema.Resource {
 		Read:   ReadUserPassword,
 		Delete: DeleteUserPassword,
 		Schema: map[string]*schema.Schema{
-			"user": &schema.Schema{
+			"user": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,

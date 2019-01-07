@@ -18,27 +18,27 @@ func resourceUser() *schema.Resource {
 		Delete: DeleteUser,
 
 		Schema: map[string]*schema.Schema{
-			"user": &schema.Schema{
+			"user": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  "localhost",
 			},
 
-			"plaintext_password": &schema.Schema{
+			"plaintext_password": {
 				Type:      schema.TypeString,
 				Optional:  true,
 				Sensitive: true,
 				StateFunc: hashSum,
 			},
 
-			"password": &schema.Schema{
+			"password": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"plaintext_password"},
@@ -46,14 +46,14 @@ func resourceUser() *schema.Resource {
 				Deprecated:    "Please use plaintext_password instead",
 			},
 
-			"auth_plugin": &schema.Schema{
+			"auth_plugin": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"plaintext_password", "password"},
 			},
 
-			"tls_option": &schema.Schema{
+			"tls_option": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
