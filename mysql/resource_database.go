@@ -25,19 +25,19 @@ func resourceDatabase() *schema.Resource {
 			State: schema.ImportStatePassthrough,
 		},
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"default_character_set": &schema.Schema{
+			"default_character_set": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "utf8",
 			},
 
-			"default_collation": &schema.Schema{
+			"default_collation": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "utf8_general_ci",

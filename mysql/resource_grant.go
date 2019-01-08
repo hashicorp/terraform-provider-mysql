@@ -20,21 +20,21 @@ func resourceGrant() *schema.Resource {
 		Delete: DeleteGrant,
 
 		Schema: map[string]*schema.Schema{
-			"user": &schema.Schema{
+			"user": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"role"},
 			},
 
-			"role": &schema.Schema{
+			"role": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"user", "host"},
 			},
 
-			"host": &schema.Schema{
+			"host": {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
@@ -42,20 +42,20 @@ func resourceGrant() *schema.Resource {
 				ConflictsWith: []string{"role"},
 			},
 
-			"database": &schema.Schema{
+			"database": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"table": &schema.Schema{
+			"table": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Default:  "*",
 			},
 
-			"privileges": &schema.Schema{
+			"privileges": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
@@ -63,7 +63,7 @@ func resourceGrant() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"roles": &schema.Schema{
+			"roles": {
 				Type:          schema.TypeSet,
 				Optional:      true,
 				ForceNew:      true,
@@ -72,14 +72,14 @@ func resourceGrant() *schema.Resource {
 				Set:           schema.HashString,
 			},
 
-			"grant": &schema.Schema{
+			"grant": {
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 				Default:  false,
 			},
 
-			"tls_option": &schema.Schema{
+			"tls_option": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,

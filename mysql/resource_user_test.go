@@ -16,7 +16,7 @@ func TestAccUser_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccUserCheckDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserExists("mysql_user.test"),
@@ -26,7 +26,7 @@ func TestAccUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "NONE"),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_ssl,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserExists("mysql_user.test"),
@@ -36,7 +36,7 @@ func TestAccUser_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_user.test", "tls_option", "SSL"),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_newPass,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserExists("mysql_user.test"),
@@ -56,7 +56,7 @@ func TestAccUser_auth(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccUserCheckDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_auth_iam_plugin,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserAuthExists("mysql_user.test"),
@@ -75,7 +75,7 @@ func TestAccUser_deprecated(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccUserCheckDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_deprecated,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserExists("mysql_user.test"),
@@ -84,7 +84,7 @@ func TestAccUser_deprecated(t *testing.T) {
 					resource.TestCheckResourceAttr("mysql_user.test", "password", "password"),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccUserConfig_deprecated_newPass,
 				Check: resource.ComposeTestCheckFunc(
 					testAccUserExists("mysql_user.test"),

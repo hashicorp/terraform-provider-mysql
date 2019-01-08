@@ -25,7 +25,7 @@ type MySQLConfiguration struct {
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"endpoint": &schema.Schema{
+			"endpoint": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_ENDPOINT", nil),
@@ -39,19 +39,19 @@ func Provider() terraform.ResourceProvider {
 				},
 			},
 
-			"username": &schema.Schema{
+			"username": {
 				Type:        schema.TypeString,
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_USERNAME", nil),
 			},
 
-			"password": &schema.Schema{
+			"password": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_PASSWORD", nil),
 			},
 
-			"tls": &schema.Schema{
+			"tls": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_TLS_CONFIG", "false"),
