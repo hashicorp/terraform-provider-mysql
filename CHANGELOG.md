@@ -1,4 +1,9 @@
 ## 1.5.1 (Unreleased)
+
+BUG FIXES:
+
+* Fix grant error related to mysql syntax error ([#57](https://github.com/terraform-providers/terraform-provider-mysql/issues/57))
+
 ## 1.5.0 (November 07, 2018)
 
 BUG FIXES:
