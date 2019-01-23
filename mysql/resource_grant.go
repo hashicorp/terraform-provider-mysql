@@ -106,6 +106,13 @@ func formatDatabaseName(database string) string {
 	return database
 }
 
+func formatTableName(table string) string {
+	if table == "" || table == "*" {
+		return fmt.Sprintf("*")
+	}
+	return fmt.Sprintf("`%s`", table)
+}
+
 func userOrRole(user string, host string, role string, hasRoles bool) (string, bool, error) {
 	if len(user) > 0 && len(host) > 0 {
 		return fmt.Sprintf("'%s'@'%s'", user, host), false, nil
@@ -174,8 +181,10 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 
 	database := formatDatabaseName(d.Get("database").(string))
 
+	table := formatTableName(d.Get("table").(string))
+
 	if (!isRole || hasPrivs) && rolesGranted == 0 {
-		grantOn = fmt.Sprintf(" ON %s.%s", database, d.Get("table").(string))
+		grantOn = fmt.Sprintf(" ON %s.%s", database, table)
 	}
 
 	stmtSQL := fmt.Sprintf("GRANT %s%s TO %s",
@@ -249,6 +258,8 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 
 	database := formatDatabaseName(d.Get("database").(string))
 
+	table := formatTableName(d.Get("table").(string))
+
 	hasRoles, err := supportsRoles(db)
 	if err != nil {
 		return err
@@ -269,7 +280,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	if !isRole && len(roles.List()) == 0 {
 		sql = fmt.Sprintf("REVOKE GRANT OPTION ON %s.%s FROM %s",
 			database,
-			d.Get("table").(string),
+			table,
 			userOrRole)
 
 		log.Printf("[DEBUG] SQL: %s", sql)
@@ -279,7 +290,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	whatToRevoke := fmt.Sprintf("ALL ON %s.%s", database, d.Get("table").(string))
+	whatToRevoke := fmt.Sprintf("ALL ON %s.%s", database, table)
 	if len(roles.List()) > 0 {
 		whatToRevoke = flattenList(roles.List(), "'%s'")
 	}
