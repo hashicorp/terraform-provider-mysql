@@ -295,7 +295,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	if len(roles.List()) > 0 {
 		whatToRevoke = flattenList(roles.List(), "'%s'")
 	} else if len(privileges.List()) > 0 {
-		privilegeList := strings.Join(privileges.List(), ", ")
+		privilegeList := flattenList(privileges.List(), "%s")
 		whatToRevoke = fmt.Sprintf("%s ON %s.%s", privilegeList, database, table)
 	}
 
