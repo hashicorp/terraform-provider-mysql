@@ -19,7 +19,7 @@ require (
 	github.com/hashicorp/hcl2 v0.0.0-20181001210626-3e4b7e0eb20e // indirect
 	github.com/hashicorp/hil v0.0.0-20170627220502-fa9f258a9250 // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
-	github.com/hashicorp/terraform v0.11.9
+	github.com/hashicorp/terraform v0.12.0
 	github.com/hashicorp/vault v0.11.3 // indirect
 	github.com/keybase/go-crypto v0.0.0-20181017165231-e696c8039bba // indirect
 	github.com/mitchellh/cli v1.0.0 // indirect
