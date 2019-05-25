@@ -62,8 +62,8 @@ github.com/hashicorp/hil v0.0.0-20170627220502-fa9f258a9250 h1:fooK5IvDL/KIsi4Lx
 github.com/hashicorp/hil v0.0.0-20170627220502-fa9f258a9250/go.mod h1:KHvg/R2/dPtaePb16oW4qIyzkMxXOL38xjRN64adsts=
 github.com/hashicorp/logutils v1.0.0 h1:dLEQVugN8vlakKOUE3ihGLTZJRB4j+M2cdTm/ORI65Y=
 github.com/hashicorp/logutils v1.0.0/go.mod h1:QIAnNjmIWmVIIkWDTG1z5v++HQmx9WQRO+LraFDTW64=
-github.com/hashicorp/terraform v0.11.9 h1:dL0cB5xsIg/rjySx1TVEnVg/FWdB03+jcKJ0O48FqPI=
-github.com/hashicorp/terraform v0.11.9/go.mod h1:uN1KUiT7Wdg61fPwsGXQwK3c8PmpIVZrt5Vcb1VrSoM=
+github.com/hashicorp/terraform v0.12.0 h1:It2vmod2dBMB4+r+aUW2Afx0HlftyUwzNsNH3I2vrJ8=
+github.com/hashicorp/terraform v0.12.0/go.mod h1:Ke0ig9gGZ8rhV6OddAhBYt5nXmpvXsuNQQ8w9qYBZfU=
 github.com/hashicorp/vault v0.11.3 h1:V9l0flz+kVRxsjulcn9ZUrjy9hLFAtl7/Rz6YyWZMpU=
 github.com/hashicorp/vault v0.11.3/go.mod h1:KfSyffbKxoVyspOdlaGVjIuwLobi07qD1bAbosPMpP0=
 github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb h1:b5rjCoWHc7eqmAS4/qyk21ZsHyb6Mxv/jykxvNTkU4M=
