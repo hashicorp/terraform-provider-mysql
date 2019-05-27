@@ -275,6 +275,7 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	roles := d.Get("roles").(*schema.Set)
+	privileges := d.Get("privileges").(*schema.Set)
 
 	var sql string
 	if !isRole && len(roles.List()) == 0 {
@@ -293,6 +294,9 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	whatToRevoke := fmt.Sprintf("ALL ON %s.%s", database, table)
 	if len(roles.List()) > 0 {
 		whatToRevoke = flattenList(roles.List(), "'%s'")
+	} else if len(privileges.List()) > 0 {
+		privilegeList := flattenList(privileges.List(), "%s")
+		whatToRevoke = fmt.Sprintf("%s ON %s.%s", privilegeList, database, table)
 	}
 
 	sql = fmt.Sprintf("REVOKE %s FROM %s", whatToRevoke, userOrRole)
