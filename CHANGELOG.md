@@ -1,4 +1,11 @@
-## 1.6.0 (Unreleased)
+## 1.5.2 (Unreleased)
+
+BUG FIXES:
+
+* Regenerate go.sum with correct checksum & pin Go ([#70](https://github.com/terraform-providers/terraform-provider-mysql/issues/70))
+* Configure provider before running test ([#72](https://github.com/terraform-providers/terraform-provider-mysql/issues/72))
+* Handle revoke of grants properly ([#73](https://github.com/terraform-providers/terraform-provider-mysql/issues/73))
+
 ## 1.5.1 (January 24, 2019)
 
 BUG FIXES:
