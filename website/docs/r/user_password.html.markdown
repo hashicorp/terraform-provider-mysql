@@ -7,7 +7,7 @@ description: |-
 ---
 # mysql_user_password
 
-The `mysql_user_password` resource sets and manages a passwordd for a given 
+The `mysql_user_password` resource sets and manages a password for a given 
 user on a MySQL server.
 
 ~> **NOTE on MySQL Passwords:** This resource conflicts with the `password` 
