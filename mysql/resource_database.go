@@ -125,9 +125,14 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
+		serverVersionString, err := serverVersionString(db)
+		if err != nil {
+			return err
+		}
+
 		// MySQL 8 returns more data in a row.
 		var res error
-		if currentVersion.GreaterThan(requiredVersion) {
+		if !strings.Contains(serverVersionString, "MariaDB") && currentVersion.GreaterThan(requiredVersion) {
 			res = db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty, &empty)
 		} else {
 			res = db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty)
