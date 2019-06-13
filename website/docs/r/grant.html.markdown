@@ -15,9 +15,9 @@ a user on a MySQL server.
 
 ```hcl
 resource "mysql_user" "jdoe" {
-  user     = "jdoe"
-  host     = "example.com"
-  password = "password"
+  user               = "jdoe"
+  host               = "example.com"
+  plaintext_password = "password"
 }
 
 resource "mysql_grant" "jdoe" {
@@ -46,9 +46,9 @@ resource "mysql_grant" "developer" {
 
 ```hcl
 resource "mysql_user" "jdoe" {
-  user     = "jdoe"
-  host     = "example.com"
-  password = "password"
+  user               = "jdoe"
+  host               = "example.com"
+  plaintext_password = "password"
 }
 
 resource "mysql_role" "developer" {
