@@ -27,7 +27,8 @@ const testAccUserPasswordConfig_basic = `
 resource "mysql_user" "test" {
   user = "jdoe"
 }
- resource "mysql_user_password" "test" {
+
+resource "mysql_user_password" "test" {
   user    = "${mysql_user.test.user}"
   pgp_key = "keybase:joestump"
 }

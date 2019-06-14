@@ -1,4 +1,11 @@
 ## 1.6.0 (Unreleased)
+
+FEATURES:
+* **Terraform 0.12** compatibility ([#85](https://github.com/terraform-providers/terraform-provider-mysql/pull/85))
+
+IMPROVEMENTS:
+* Documentation fix-ups ([#84](https://github.com/terraform-providers/terraform-provider-mysql/pull/84) & [#81](https://github.com/terraform-providers/terraform-provider-mysql/pull/81))
+
 ## 1.5.2 (May 29, 2019)
 
 BUG FIXES:
