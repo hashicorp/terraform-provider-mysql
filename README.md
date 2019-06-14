@@ -18,11 +18,11 @@ Requirements
 Usage
 -----
 
-For Terraform 0.12+ compatibility, the configuration should specify version 2 or higher:
+For Terraform 0.12+ compatibility, the configuration should specify version 1.6 or higher:
 
 ```hcl
 provider "mysql" {
-  version = "~> 2.0"
+  version = "~> 1.6"
 }
 ```
 
