@@ -1,4 +1,4 @@
-## 1.6.0 (Unreleased)
+## 1.6.0 (June 18, 2019)
 
 FEATURES:
 * **Terraform 0.12** compatibility ([#85](https://github.com/terraform-providers/terraform-provider-mysql/pull/85))
