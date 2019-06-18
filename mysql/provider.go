@@ -119,6 +119,16 @@ func serverVersion(db *sql.DB) (*version.Version, error) {
 	return version.NewVersion(versionString)
 }
 
+func serverVersionString(db *sql.DB) (string, error) {
+	var versionString string
+	err := db.QueryRow("SELECT @@GLOBAL.version").Scan(&versionString)
+	if err != nil {
+		return "", err
+	}
+
+	return versionString, nil
+}
+
 func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
 	dsn := conf.FormatDSN()
 	var db *sql.DB
