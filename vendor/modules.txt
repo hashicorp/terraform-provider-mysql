@@ -61,6 +61,8 @@ github.com/davecgh/go-spew/spew
 github.com/fatih/color
 # github.com/go-sql-driver/mysql v1.4.0
 github.com/go-sql-driver/mysql
+# github.com/gofrs/uuid v3.2.0+incompatible
+github.com/gofrs/uuid
 # github.com/golang/protobuf v1.3.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -229,8 +231,6 @@ github.com/posener/complete
 github.com/posener/complete/cmd/install
 github.com/posener/complete/cmd
 github.com/posener/complete/match
-# github.com/satori/go.uuid v1.2.0
-github.com/satori/go.uuid
 # github.com/spf13/afero v1.2.1
 github.com/spf13/afero
 github.com/spf13/afero/mem
