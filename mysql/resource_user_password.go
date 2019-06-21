@@ -3,10 +3,10 @@ package mysql
 import (
 	"fmt"
 
+	"github.com/gofrs/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform/helper/encryption"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/satori/go.uuid"
 )
 
 func resourceUserPassword() *schema.Resource {
@@ -49,7 +49,11 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	uuid := uuid.NewV4()
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+
 	password := uuid.String()
 	pgpKey := d.Get("pgp_key").(string)
 	encryptionKey, err := encryption.RetrieveGPGKey(pgpKey)
