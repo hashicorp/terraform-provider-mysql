@@ -37,8 +37,8 @@ password will be updated accordingly.
 The following arguments are supported:
 
 * `user` - (Required) The IAM user to associate with this access key.
+* `pgp_key` - (Required) Either a base-64 encoded PGP public key, or a keybase username in the form `keybase:some_person_that_exists`.
 * `host` - (Optional) The source host of the user. Defaults to `localhost`.
-* `pgp_key` - (Optional) Either a base-64 encoded PGP public key, or a keybase username in the form `keybase:some_person_that_exists`.
 
 ## Attributes Reference
 
