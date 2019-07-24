@@ -1,4 +1,4 @@
-## 1.7.0 (Unreleased)
+## 1.7.0 (July 24, 2019)
 
 FEATURES:
 * Add compatibility to create databases on mariadb instances ([#83](https://github.com/terraform-providers/terraform-provider-mysql/pull/83))
