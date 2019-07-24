@@ -1,4 +1,12 @@
-## 1.6.1 (Unreleased)
+## 1.7.0 (Unreleased)
+
+FEATURES:
+* Add compatibility to create databases on mariadb instances ([#83](https://github.com/terraform-providers/terraform-provider-mysql/pull/83))
+
+IMPROVEMENTS:
+* Replace `satori/go.uuid` with `gofrs/uuid` ([#69](https://github.com/terraform-providers/terraform-provider-mysql/pull/69))
+* change pgp_key from optional to required ([#87](https://github.com/terraform-providers/terraform-provider-mysql/pull/87))
+
 ## 1.6.0 (June 18, 2019)
 
 FEATURES:
