@@ -111,7 +111,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if currentVersion.GreaterThan(requiredVersion) {
+	if currentVersion.GreaterThan(requiredVersion) && d.Get("tls_option").(string) != "" {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
