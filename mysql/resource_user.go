@@ -3,6 +3,7 @@ package mysql
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"errors"
 
@@ -16,6 +17,9 @@ func resourceUser() *schema.Resource {
 		Update: UpdateUser,
 		Read:   ReadUser,
 		Delete: DeleteUser,
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"user": {
@@ -111,7 +115,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if currentVersion.GreaterThan(requiredVersion) && d.Get("tls_option").(string) != "" {
+	if currentVersion.GreaterThan(requiredVersion) {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
@@ -211,9 +215,10 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	stmtSQL := fmt.Sprintf("SELECT USER FROM mysql.user WHERE USER='%s'",
-		d.Get("user").(string))
-
+	id := strings.Split(d.Id(), "@")
+	user, host := id[0], id[1]
+	stmtSQL := fmt.Sprintf("SELECT user,host,ssl_type,ssl_cipher,x509_issuer,x509_subject FROM mysql.user WHERE USER='%s' and HOST='%s'",
+		user, host)
 	log.Println("Executing statement:", stmtSQL)
 
 	rows, err := db.Query(stmtSQL)
@@ -224,7 +229,45 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 
 	if !rows.Next() && rows.Err() == nil {
 		d.SetId("")
+	} else {
+		var (
+			db_user      string
+			db_host      string
+			ssl_type     string
+			ssl_cipher   string
+			x509_issuer  string
+			x509_subject string
+		)
+		err = rows.Scan(&db_user, &db_host, &ssl_type, &ssl_cipher, &x509_issuer, &x509_subject)
+		d.Set("host", db_host)
+		d.Set("user", db_user)
+
+		/* ssl_type can be ANY, X509 or SPECIFIED */
+		if ssl_type == "" {
+			d.Set("tls_option", "NONE")
+		} else if ssl_type == "ANY" {
+			d.Set("tls_option", "SSL")
+		} else if ssl_type == "X509" {
+			d.Set("tls_option", "X509")
+		} else if ssl_type == "SPECIFIED" {
+			var params []string
+			if x509_subject != "" {
+				params = append(params, " SUBJECT '"+x509_subject+"'")
+			}
+			if x509_issuer != "" {
+				params = append(params, " ISSUER '"+x509_issuer+"'")
+			}
+			if ssl_cipher != "" {
+				params = append(params, " CIPHER '"+ssl_cipher+"'")
+			}
+			var param string
+			param = strings.Join(params, " AND")
+			log.Println("param: ", param)
+			d.Set("tls_option", param)
+		}
+
 	}
+
 	return rows.Err()
 }
 
