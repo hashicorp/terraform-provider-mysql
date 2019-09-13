@@ -11,6 +11,15 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
+type mySQLUser struct {
+	User        string
+	Host        string
+	SSLType     string
+	SSLCipher   string
+	X509Issuer  string
+	X509Subject string
+}
+
 func resourceUser() *schema.Resource {
 	return &schema.Resource{
 		Create: CreateUser,
@@ -209,6 +218,32 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
+func getTLSOption(user mySQLUser) string {
+	var tlsOption string
+	switch user.SSLType {
+	case "":
+		tlsOption = "NONE"
+	case "ANY":
+		tlsOption = "SSL"
+	case "X509":
+		tlsOption = "X509"
+	case "SPECIFIED":
+		var params []string
+		if user.X509Subject != "" {
+			params = append(params, " SUBJECT '"+user.X509Subject+"'")
+		}
+		if user.X509Issuer != "" {
+			params = append(params, " ISSUER '"+user.X509Issuer+"'")
+		}
+		if user.SSLCipher != "" {
+			params = append(params, " CIPHER '"+user.SSLCipher+"'")
+		}
+		tlsOption = strings.Join(params, " AND")
+	}
+	log.Println("tls_option: ", tlsOption)
+	return tlsOption
+}
+
 func ReadUser(d *schema.ResourceData, meta interface{}) error {
 	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
 	if err != nil {
@@ -217,11 +252,10 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 
 	id := strings.Split(d.Id(), "@")
 	user, host := id[0], id[1]
-	stmtSQL := fmt.Sprintf("SELECT user,host,ssl_type,ssl_cipher,x509_issuer,x509_subject FROM mysql.user WHERE USER='%s' and HOST='%s'",
-		user, host)
+	stmtSQL := "SELECT user,host,ssl_type,ssl_cipher,x509_issuer,x509_subject FROM mysql.user WHERE USER=? and HOST=?"
 	log.Println("Executing statement:", stmtSQL)
 
-	rows, err := db.Query(stmtSQL)
+	rows, err := db.Query(stmtSQL, user, host)
 	if err != nil {
 		return err
 	}
@@ -230,41 +264,23 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 	if !rows.Next() && rows.Err() == nil {
 		d.SetId("")
 	} else {
-		var (
-			db_user      string
-			db_host      string
-			ssl_type     string
-			ssl_cipher   string
-			x509_issuer  string
-			x509_subject string
-		)
-		err = rows.Scan(&db_user, &db_host, &ssl_type, &ssl_cipher, &x509_issuer, &x509_subject)
-		d.Set("host", db_host)
-		d.Set("user", db_user)
+		/*		var (
+					db_user      string
+					db_host      string
+					ssl_type     string
+					ssl_cipher   string
+					x509_issuer  string
+					x509_subject string
+				)
+		*/
+		var user mySQLUser
+		err = rows.Scan(&user.User, &user.Host, &user.SSLType, &user.SSLCipher, &user.X509Issuer, &user.X509Subject)
+		d.Set("host", user.Host)
+		d.Set("user", user.User)
+		tlsOption := getTLSOption(user)
+		d.Set("tls_option", tlsOption)
 
 		/* ssl_type can be ANY, X509 or SPECIFIED */
-		if ssl_type == "" {
-			d.Set("tls_option", "NONE")
-		} else if ssl_type == "ANY" {
-			d.Set("tls_option", "SSL")
-		} else if ssl_type == "X509" {
-			d.Set("tls_option", "X509")
-		} else if ssl_type == "SPECIFIED" {
-			var params []string
-			if x509_subject != "" {
-				params = append(params, " SUBJECT '"+x509_subject+"'")
-			}
-			if x509_issuer != "" {
-				params = append(params, " ISSUER '"+x509_issuer+"'")
-			}
-			if ssl_cipher != "" {
-				params = append(params, " CIPHER '"+ssl_cipher+"'")
-			}
-			var param string
-			param = strings.Join(params, " AND")
-			log.Println("param: ", param)
-			d.Set("tls_option", param)
-		}
 
 	}
 
