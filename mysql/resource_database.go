@@ -47,7 +47,7 @@ func resourceDatabase() *schema.Resource {
 }
 
 func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func CreateDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func UpdateDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteDatabase(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}

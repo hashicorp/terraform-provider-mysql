@@ -139,7 +139,7 @@ func supportsRoles(db *sql.DB) (bool, error) {
 }
 
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadGrant(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}

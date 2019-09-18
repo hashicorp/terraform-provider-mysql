@@ -19,7 +19,9 @@ import (
 )
 
 type MySQLConfiguration struct {
-	Config *mysql.Config
+	Config          *mysql.Config
+	MaxConnLifetime time.Duration
+	MaxOpenConns    int
 }
 
 func Provider() terraform.ResourceProvider {
@@ -61,6 +63,16 @@ func Provider() terraform.ResourceProvider {
 					"skip-verify",
 				}, false),
 			},
+
+			"max_conn_lifetime_sec": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+
+			"max_open_conns": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -99,7 +111,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	})
 
 	return &MySQLConfiguration{
-		Config: &conf,
+		Config:          &conf,
+		MaxConnLifetime: time.Duration(d.Get("max_conn_lifetime_sec").(int)) * time.Second,
+		MaxOpenConns:    d.Get("max_open_conns").(int),
 	}, nil
 }
 
@@ -129,8 +143,9 @@ func serverVersionString(db *sql.DB) (string, error) {
 	return versionString, nil
 }
 
-func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
-	dsn := conf.FormatDSN()
+func connectToMySQL(conf *MySQLConfiguration) (*sql.DB, error) {
+
+	dsn := conf.Config.FormatDSN()
 	var db *sql.DB
 	var err error
 
@@ -155,6 +170,7 @@ func connectToMySQL(conf *mysql.Config) (*sql.DB, error) {
 	if retryError != nil {
 		return nil, fmt.Errorf("Could not connect to server: %s", retryError)
 	}
-
+	db.SetConnMaxLifetime(conf.MaxConnLifetime)
+	db.SetMaxOpenConns(conf.MaxOpenConns)
 	return db, nil
 }

@@ -17,7 +17,7 @@ func TestAccRole_basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 			if err != nil {
 				return
 			}
@@ -48,7 +48,7 @@ func TestAccRole_basic(t *testing.T) {
 
 func testAccRoleExists(roleName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func testAccGetRoleGrantCount(roleName string, db *sql.DB) (int, error) {
 
 func testAccRoleCheckDestroy(roleName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 		if err != nil {
 			return err
 		}
