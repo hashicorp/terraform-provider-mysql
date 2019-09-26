@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform/helper/encryption"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/encryption"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceUserPassword() *schema.Resource {
