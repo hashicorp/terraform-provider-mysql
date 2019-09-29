@@ -53,7 +53,7 @@ func TestAccGrant_role(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 			if err != nil {
 				return
 			}
@@ -88,7 +88,7 @@ func TestAccGrant_roleToUser(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
 			testAccPreCheck(t)
-			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 			if err != nil {
 				return
 			}
@@ -129,7 +129,7 @@ func testAccPrivilegeExists(rn string, privilege string) resource.TestCheckFunc 
 			return fmt.Errorf("grant id not set")
 		}
 
-		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+		db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 		if err != nil {
 			return err
 		}
@@ -175,7 +175,7 @@ func testAccPrivilegeExists(rn string, privilege string) resource.TestCheckFunc 
 }
 
 func testAccGrantCheckDestroy(s *terraform.State) error {
-	db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}

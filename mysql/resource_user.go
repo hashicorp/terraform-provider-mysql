@@ -64,7 +64,7 @@ func resourceUser() *schema.Resource {
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration).Config)
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
