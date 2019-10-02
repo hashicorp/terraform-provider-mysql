@@ -1,4 +1,15 @@
-## 1.7.1 (Unreleased)
+## 1.8.0 (Unreleased)
+
+FEATURES:
+* Add parameters for mysql connection configuration ([#95](https://github.com/terraform-providers/terraform-provider-mysql/pull/95))
+
+IMPROVEMENTS:
+* Remove use of config pkg ([#93](https://github.com/terraform-providers/terraform-provider-mysql/pull/93))
+* Migrate provider to new standalone Terraform SDK ([#96](https://github.com/terraform-providers/terraform-provider-mysql/pull/96))
+
+BUG FIXES:
+* Disable REQUIRE syntax when `tls_options` is an empty string ([#91](https://github.com/terraform-providers/terraform-provider-mysql/pull/91))
+
 ## 1.7.0 (July 24, 2019)
 
 FEATURES:
