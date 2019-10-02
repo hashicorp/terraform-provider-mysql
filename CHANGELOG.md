@@ -1,4 +1,4 @@
-## 1.8.0 (Unreleased)
+## 1.8.0 (October 02, 2019)
 
 FEATURES:
 * Add parameters for mysql connection configuration ([#95](https://github.com/terraform-providers/terraform-provider-mysql/pull/95))
