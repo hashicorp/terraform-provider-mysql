@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"strings"
 	"time"
@@ -131,11 +130,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	if tlsConfig == "custom" {
 		rootCertPool := x509.NewCertPool()
-		pem, err := ioutil.ReadFile(sslCa)
-		if err != nil {
-			return nil, fmt.Errorf("Could not open CA file %s", sslCa)
-		}
-		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+		sslCaBytes := []byte(sslCa)
+		if ok := rootCertPool.AppendCertsFromPEM(sslCaBytes); !ok {
 			return nil, fmt.Errorf("Could not read a valid PEM certificate")
 		}
 
