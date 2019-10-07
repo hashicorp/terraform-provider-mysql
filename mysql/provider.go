@@ -105,13 +105,8 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	var tlsConfig = d.Get("tls").(string)
 	var sslCa = d.Get("ssl_ca").(string)
-	if sslCa != "" {
-		switch tlsConfig {
-		case "false", "":
-			tlsConfig = "false"
-		default:
-			tlsConfig = "custom"
-		}
+	if sslCa != "" && tlsConfig == "true" {
+		tlsConfig = "custom"
 	}
 
 	conf := mysql.Config{
