@@ -82,3 +82,4 @@ The following arguments are supported:
 * `tls` - (Optional) The TLS configuration. One of `false`, `true`, or `skip-verify`. Defaults to `false`. Can also be sourced from the `MYSQL_TLS_CONFIG` environment variable.
 * `max_conn_lifetime_sec` - (Optional) Sets the maximum amount of time a connection may be reused. If d <= 0, connections are reused forever.
 * `max_open_conns` - (Optional) Sets the maximum number of open connections to the database. If n <= 0, then there is no limit on the number of open connections.
+* `ssl_ca` - (Optional) The contents of the PEM file of a CA. Used when the `tls` argument is set to `true`.

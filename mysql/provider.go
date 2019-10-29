@@ -1,6 +1,8 @@
 package mysql
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
 	"fmt"
 	"net"
@@ -73,6 +75,11 @@ func Provider() terraform.ResourceProvider {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+
+			"ssl_ca": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -96,12 +103,18 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		proto = "unix"
 	}
 
+	var tlsConfig = d.Get("tls").(string)
+	var sslCa = d.Get("ssl_ca").(string)
+	if sslCa != "" && tlsConfig == "true" {
+		tlsConfig = "custom"
+	}
+
 	conf := mysql.Config{
 		User:                 d.Get("username").(string),
 		Passwd:               d.Get("password").(string),
 		Net:                  proto,
 		Addr:                 endpoint,
-		TLSConfig:            d.Get("tls").(string),
+		TLSConfig:            tlsConfig,
 		AllowNativePasswords: true,
 	}
 
@@ -109,6 +122,19 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	mysql.RegisterDial("tcp", func(network string) (net.Conn, error) {
 		return dialer.Dial("tcp", network)
 	})
+
+	if tlsConfig == "custom" {
+		rootCertPool := x509.NewCertPool()
+		sslCaBytes := []byte(sslCa)
+		if ok := rootCertPool.AppendCertsFromPEM(sslCaBytes); !ok {
+			return nil, fmt.Errorf("Could not read a valid PEM certificate")
+		}
+
+		mysql.RegisterTLSConfig("custom", &tls.Config{
+			RootCAs:            rootCertPool,
+			InsecureSkipVerify: d.Get("tls").(string) == "skip-verify",
+		})
+	}
 
 	return &MySQLConfiguration{
 		Config:          &conf,
@@ -160,6 +186,9 @@ func connectToMySQL(conf *MySQLConfiguration) (*sql.DB, error) {
 		}
 
 		err = db.Ping()
+		if err, ok := err.(x509.UnknownAuthorityError); ok {
+			return resource.NonRetryableError(err)
+		}
 		if err != nil {
 			return resource.RetryableError(err)
 		}
