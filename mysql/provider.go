@@ -18,6 +18,11 @@ import (
 	"golang.org/x/net/proxy"
 )
 
+const (
+	cleartextPasswords = "cleartext"
+	nativePasswords    = "native"
+)
+
 type MySQLConfiguration struct {
 	Config          *mysql.Config
 	MaxConnLifetime time.Duration
@@ -73,6 +78,13 @@ func Provider() terraform.ResourceProvider {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+
+			"authentication_plugin": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      nativePasswords,
+				ValidateFunc: validation.StringInSlice([]string{cleartextPasswords, nativePasswords}, true),
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -97,12 +109,13 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	conf := mysql.Config{
-		User:                 d.Get("username").(string),
-		Passwd:               d.Get("password").(string),
-		Net:                  proto,
-		Addr:                 endpoint,
-		TLSConfig:            d.Get("tls").(string),
-		AllowNativePasswords: true,
+		User:                    d.Get("username").(string),
+		Passwd:                  d.Get("password").(string),
+		Net:                     proto,
+		Addr:                    endpoint,
+		TLSConfig:               d.Get("tls").(string),
+		AllowNativePasswords:    d.Get("authentication_plugin").(string) == nativePasswords,
+		AllowCleartextPasswords: d.Get("authentication_plugin").(string) == cleartextPasswords,
 	}
 
 	dialer := proxy.FromEnvironment()
