@@ -1,4 +1,13 @@
-## 1.8.1 (Unreleased)
+## 1.9.0 (Unreleased)
+
+FEATURES:
+* New provider attribute `proxy` ([#102](https://github.com/terraform-providers/terraform-provider-mysql/pull/102))
+* New provider attribute `authentication_plugin` ([#105](https://github.com/terraform-providers/terraform-provider-mysql/pull/105))
+
+IMPROVEMENTS:
+* Update documentation regarding environment variables for provider config vars ([#103](https://github.com/terraform-providers/terraform-provider-mysql/pull/103))
+* Small documentation update around spacing ([#104](https://github.com/terraform-providers/terraform-provider-mysql/pull/104))
+
 ## 1.8.0 (October 02, 2019)
 
 FEATURES:
