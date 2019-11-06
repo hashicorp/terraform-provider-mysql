@@ -56,8 +56,12 @@ func Provider() terraform.ResourceProvider {
 			},
 
 			"proxy": {
-				Type:         schema.TypeString,
-				Optional:     true,
+				Type:     schema.TypeString,
+				Optional: true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"ALL_PROXY",
+					"all_proxy",
+				}, nil),
 				ValidateFunc: validation.StringMatch(regexp.MustCompile("^socks5h?://.*:\\d+$"), "The proxy URL is not a valid socks url."),
 			},
 
@@ -113,7 +117,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		AllowNativePasswords: true,
 	}
 
-	dialer, err := getDialerFromArgOrFromEnv(d)
+	dialer, err := makeDialer(d)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +135,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 var identQuoteReplacer = strings.NewReplacer("`", "``")
 
-func getDialerFromArgOrFromEnv(d *schema.ResourceData) (proxy.Dialer, error) {
+func makeDialer(d *schema.ResourceData) (proxy.Dialer, error) {
 	proxyFromEnv := proxy.FromEnvironment()
 	proxyArg := d.Get("proxy").(string)
 
