@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -56,6 +58,16 @@ func Provider() terraform.ResourceProvider {
 				Type:        schema.TypeString,
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("MYSQL_PASSWORD", nil),
+			},
+
+			"proxy": {
+				Type:     schema.TypeString,
+				Optional: true,
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"ALL_PROXY",
+					"all_proxy",
+				}, nil),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile("^socks5h?://.*:\\d+$"), "The proxy URL is not a valid socks url."),
 			},
 
 			"tls": {
@@ -118,7 +130,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		AllowCleartextPasswords: d.Get("authentication_plugin").(string) == cleartextPasswords,
 	}
 
-	dialer := proxy.FromEnvironment()
+	dialer, err := makeDialer(d)
+	if err != nil {
+		return nil, err
+	}
+
 	mysql.RegisterDial("tcp", func(network string) (net.Conn, error) {
 		return dialer.Dial("tcp", network)
 	})
@@ -131,6 +147,26 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 var identQuoteReplacer = strings.NewReplacer("`", "``")
+
+func makeDialer(d *schema.ResourceData) (proxy.Dialer, error) {
+	proxyFromEnv := proxy.FromEnvironment()
+	proxyArg := d.Get("proxy").(string)
+
+	if len(proxyArg) > 0 {
+		proxyURL, err := url.Parse(proxyArg)
+		if err != nil {
+			return nil, err
+		}
+		proxy, err := proxy.FromURL(proxyURL, proxyFromEnv)
+		if err != nil {
+			return nil, err
+		}
+
+		return proxy, nil
+	}
+
+	return proxyFromEnv, nil
+}
 
 func quoteIdentifier(in string) string {
 	return fmt.Sprintf("`%s`", identQuoteReplacer.Replace(in))
