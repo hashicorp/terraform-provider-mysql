@@ -1,4 +1,4 @@
-## 1.9.0 (Unreleased)
+## 1.9.0 (November 07, 2019)
 
 FEATURES:
 * New provider attribute `proxy` ([#102](https://github.com/terraform-providers/terraform-provider-mysql/pull/102))
