@@ -91,6 +91,12 @@ func Provider() terraform.ResourceProvider {
 				Optional: true,
 			},
 
+			"conn_params": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				Default:  nil,
+			},
+
 			"authentication_plugin": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -114,10 +120,20 @@ func Provider() terraform.ResourceProvider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	var endpoint = d.Get("endpoint").(string)
+	var conn_params = make(map[string]string)
 
 	proto := "tcp"
 	if len(endpoint) > 0 && endpoint[0] == '/' {
 		proto = "unix"
+	}
+
+	for k, v := range d.Get("conn_params").(map[string]interface{}) {
+		temp, ok := v.(string)
+		if !ok {
+			fmt.Errorf("Cannot convert connection parameters to string")
+		} else {
+			conn_params[k] = temp
+		}
 	}
 
 	conf := mysql.Config{
@@ -128,6 +144,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		TLSConfig:               d.Get("tls").(string),
 		AllowNativePasswords:    d.Get("authentication_plugin").(string) == nativePasswords,
 		AllowCleartextPasswords: d.Get("authentication_plugin").(string) == cleartextPasswords,
+		Params:                  conn_params,
 	}
 
 	dialer, err := makeDialer(d)
