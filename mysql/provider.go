@@ -61,12 +61,9 @@ func Provider() terraform.ResourceProvider {
 			},
 
 			"proxy": {
-				Type:     schema.TypeString,
-				Optional: true,
-				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
-					"ALL_PROXY",
-					"all_proxy",
-				}, nil),
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      nil,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile("^socks5h?://.*:\\d+$"), "The proxy URL is not a valid socks url."),
 			},
 
