@@ -138,7 +138,7 @@ func supportsRoles(db *sql.DB) (bool, error) {
   } else {
     requiredVersion, _ := version.NewVersion("8.0.0")
   }
-  versionNumber := strings.Split(currentVersion, "-")
+  versionNumber := strings.Split(currentVersionString, "-")
   currentVersion := version.NewVersion(versionNumber)
 
   hasRoles := currentVersion.GreaterThan(requiredVersion)
