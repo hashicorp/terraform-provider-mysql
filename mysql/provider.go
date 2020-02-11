@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/hashicorp/go-version"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -170,26 +169,6 @@ func makeDialer(d *schema.ResourceData) (proxy.Dialer, error) {
 
 func quoteIdentifier(in string) string {
 	return fmt.Sprintf("`%s`", identQuoteReplacer.Replace(in))
-}
-
-func serverVersion(db *sql.DB) (*version.Version, error) {
-	var versionString string
-	err := db.QueryRow("SELECT @@GLOBAL.innodb_version").Scan(&versionString)
-	if err != nil {
-		return nil, err
-	}
-
-	return version.NewVersion(versionString)
-}
-
-func serverVersionString(db *sql.DB) (string, error) {
-	var versionString string
-	err := db.QueryRow("SELECT @@GLOBAL.version").Scan(&versionString)
-	if err != nil {
-		return "", err
-	}
-
-	return versionString, nil
 }
 
 func connectToMySQL(conf *MySQLConfiguration) (*sql.DB, error) {

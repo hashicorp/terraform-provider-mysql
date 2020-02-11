@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -22,14 +21,14 @@ func TestAccRole_basic(t *testing.T) {
 				return
 			}
 
-			requiredVersion, _ := version.NewVersion("8.0.0")
-			currentVersion, err := serverVersion(db)
+			serverVersion, err := serverVersion(db)
 			if err != nil {
 				return
 			}
+			hasRoles := serverVersion.supportsRoles()
 
-			if currentVersion.LessThan(requiredVersion) {
-				t.Skip("Roles require MySQL 8+")
+			if !hasRoles {
+				t.Skip("Roles are not supported by this version")
 			}
 		},
 		Providers:    testAccProviders,
