@@ -133,16 +133,18 @@ func supportsRoles(db *sql.DB) (bool, error) {
 		return false, err
 	}
 
-  if strings.Contains(currentVersionString, "MariaDB") {
-    requiredVersion, _ := version.NewVersion("10.0.5")
-  } else {
-    requiredVersion, _ := version.NewVersion("8.0.0")
-  }
-  versionNumber := strings.Split(currentVersionString, "-")
-  currentVersion := version.NewVersion(versionNumber)
+	var requiredVersion version
+	if strings.Contains(currentVersionString, "MariaDB") {
+		requiredVersion, _ = version.NewVersion("10.0.5")
+	} else {
+		requiredVersion, _ = version.NewVersion("8.0.0")
+	}
 
-  hasRoles := currentVersion.GreaterThan(requiredVersion)
-  return hasRoles, nil
+	versionNumber := strings.Split(currentVersionString, "-")
+	currentVersion := version.NewVersion(versionNumber)
+
+	hasRoles := currentVersion.GreaterThan(requiredVersion)
+	return hasRoles, nil
 }
 
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
