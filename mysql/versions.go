@@ -56,8 +56,7 @@ func (serverVersion ServerVersion) supportsTlsOption() bool {
 	if serverVersion.vendor == MariaDB {
 		// TODO since when exactly has MariaDB had this option?
 		// The docs are unclear: https://mariadb.com/kb/en/create-user/#tls-options
-		// requiredVersion, _ = version.NewVersion("5.7.0")
-		return true
+		requiredVersion, _ = version.NewVersion("10.2.0")
 	} else {
 		requiredVersion, _ = version.NewVersion("5.7.0")
 	}
