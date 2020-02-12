@@ -38,7 +38,6 @@ script:
       echo 'Waiting for MySQL...'
       sleep 1;
     done;
-  - [[ $DB =~ ^mysql ]] && mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USERNAME} -e "INSTALL PLUGIN mysql_no_login SONAME 'mysql_no_login.so';"
   - make testacc
 
 matrix:
