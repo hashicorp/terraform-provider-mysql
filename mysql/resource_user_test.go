@@ -53,21 +53,21 @@ func TestAccUser_basic(t *testing.T) {
 func TestAccUser_auth(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck: func() {
-		  testAccPreCheck(t)
-      db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
-      if err != nil {
-        return
-      }
+			testAccPreCheck(t)
+			db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
+			if err != nil {
+				return
+			}
 
-      serverVersion, err := serverVersion(db)
-      if err != nil {
-        return
-      }
+			serverVersion, err := serverVersion(db)
+			if err != nil {
+				return
+			}
 
-      if serverVersion.vendor == MariaDB {
-        t.Skip("MariaDB does not support the mysql_no_login plugin")
-      }
-    },
+			if serverVersion.vendor == MariaDB {
+				t.Skip("MariaDB does not support the mysql_no_login plugin")
+			}
+		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccUserCheckDestroy,
 		Steps: []resource.TestStep{
