@@ -52,7 +52,7 @@ func TestAccUser_basic(t *testing.T) {
 
 func TestAccUser_auth(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() {
+		PreCheck: func() {
 		  testAccPreCheck(t)
       db, err := connectToMySQL(testAccProvider.Meta().(*MySQLConfiguration))
       if err != nil {
@@ -63,6 +63,7 @@ func TestAccUser_auth(t *testing.T) {
       if err != nil {
         return
       }
+
       if serverVersion.vendor == MariaDB {
         t.Skip("MariaDB does not support the mysql_no_login plugin")
       }
