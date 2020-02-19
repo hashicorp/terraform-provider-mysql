@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -74,7 +75,7 @@ func ShowTables(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	d.SetId(database)
+	d.SetId(resource.UniqueId())
 
 	return nil
 }
