@@ -253,12 +253,13 @@ func DeleteUser(d *schema.ResourceData, meta interface{}) error {
 
 func ImportUser(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	userHost := strings.SplitN(d.Id(), "@", 2)
-	user := userHost[0]
-	host := "localhost"
 
-	if len(userHost) == 2 {
-		host = userHost[1]
+	if len(userHost) != 2 {
+		return nil, fmt.Errorf("wrong ID format %s (expected USER@HOST)", d.Id())
 	}
+
+	user := userHost[0]
+	host := userHost[1]
 
 	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 
