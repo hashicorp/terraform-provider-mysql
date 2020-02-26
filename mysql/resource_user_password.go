@@ -70,6 +70,9 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 
 	/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
 	serverVersion, err := serverVersion(db)
+	if err != nil {
+		return fmt.Errorf("Could not determine server version: %s", err)
+	}
 	ver, _ := version.NewVersion("5.7.6")
 	var stmtSQL string
 	if serverVersion.LessThan(ver) {
