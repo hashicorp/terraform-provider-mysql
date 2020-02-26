@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofrs/uuid"
 	"github.com/hashicorp/go-version"
@@ -67,23 +68,24 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 	d.Set("key_fingerprint", fingerprint)
 	d.Set("encrypted_password", encrypted)
 
-	requiredVersion, _ := version.NewVersion("8.0.0")
-	currentVersion, err := serverVersion(db)
-	if err != nil {
-		return err
+	/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
+	serverVersion, err := serverVersion(db)
+	ver, _ := version.NewVersion("5.7.6")
+	var stmtSQL string
+	if serverVersion.LessThan(ver) {
+		stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
+			d.Get("user").(string),
+			d.Get("host").(string),
+			password)
+	} else {
+		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' IDENTIFIED BY '%s'",
+			d.Get("user").(string),
+			d.Get("host").(string),
+			password)
 	}
 
-	passSQL := fmt.Sprintf("'%s'", password)
-	if currentVersion.LessThan(requiredVersion) {
-		passSQL = fmt.Sprintf("PASSWORD(%s)", passSQL)
-	}
-
-	sql := fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = %s",
-		d.Get("user").(string),
-		d.Get("host").(string),
-		passSQL)
-
-	_, err = db.Exec(sql)
+	log.Println("Executing query:", stmtSQL)
+	_, err = db.Exec(stmtSQL)
 	if err != nil {
 		return err
 	}
