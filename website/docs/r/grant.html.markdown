@@ -21,8 +21,8 @@ resource "mysql_user" "jdoe" {
 }
 
 resource "mysql_grant" "jdoe" {
-  user       = "${mysql_user.jdoe.user}"
-  host       = "${mysql_user.jdoe.host}"
+  user       = mysql_user.jdoe.user
+  host       = mysql_user.jdoe.host
   database   = "app"
   privileges = ["SELECT", "UPDATE"]
 }
@@ -36,7 +36,7 @@ resource "mysql_role" "developer" {
 }
 
 resource "mysql_grant" "developer" {
-  role       = "${mysql_role.developer.name}"
+  role       = mysql_role.developer.name
   database   = "app"
   privileges = ["SELECT", "UPDATE"]
 }
@@ -56,10 +56,10 @@ resource "mysql_role" "developer" {
 }
 
 resource "mysql_grant" "developer" {
-  user     = "${mysql_user.jdoe.user}"
-  host     = "${mysql_user.jdoe.host}"
+  user     = mysql_user.jdoe.user
+  host     = mysql_user.jdoe.host
   database = "app"
-  roles    = ["${mysql_role.developer.name}"]
+  roles    = [mysql_role.developer.name]
 }
 ```
 
