@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/go-version"
@@ -18,6 +19,9 @@ func resourceGrant() *schema.Resource {
 		Update: nil,
 		Read:   ReadGrant,
 		Delete: DeleteGrant,
+		Importer: &schema.ResourceImporter{
+			State: ImportGrant,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"user": {
@@ -307,4 +311,78 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	return nil
+}
+
+func ImportGrant(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	userHost := strings.SplitN(d.Id(), "@", 2)
+
+	if len(userHost) != 2 {
+		return nil, fmt.Errorf("wrong ID format %s (expected USER@HOST)", d.Id())
+	}
+
+	user := userHost[0]
+	host := userHost[1]
+
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
+
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'", user, host)
+	rows, err := db.Query(sql)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	re := regexp.MustCompile(`^GRANT (.+) ON (.+?)\.(.+?) TO`)
+	results := []*schema.ResourceData{}
+
+	for rows.Next() {
+		var grant string
+
+		err := rows.Scan(&grant)
+
+		if err != nil {
+			return nil, err
+		}
+
+		m := re.FindStringSubmatch(grant)
+
+		if len(m) != 4 {
+			return nil, fmt.Errorf("failed to parse grant statement: %s", grant)
+		}
+
+		privs := m[1]
+		database := strings.Trim(m[2], "`")
+		table := strings.Trim(m[3], "`")
+		results = append(results, restoreGrant(user, host, database, table, privs))
+	}
+
+	return results, nil
+}
+
+func restoreGrant(user string, host string, database string, table string, privsStr string) *schema.ResourceData {
+	d := resourceGrant().Data(nil)
+
+	id := fmt.Sprintf("%s@%s:%s", user, host, formatDatabaseName(database))
+	d.SetId(id)
+
+	d.Set("user", user)
+	d.Set("host", host)
+	d.Set("database", database)
+	d.Set("table", table)
+
+	priv_list := strings.Split(privsStr, ",")
+	privileges := make([]string, len(priv_list))
+
+	for i, priv := range priv_list {
+		privileges[i] = strings.TrimSpace(priv)
+	}
+
+	d.Set("privileges", privileges)
+
+	return d
 }
