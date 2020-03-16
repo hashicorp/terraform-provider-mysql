@@ -106,6 +106,10 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 
+		DataSourcesMap: map[string]*schema.Resource{
+			"mysql_tables": dataSourceTables(),
+		},
+
 		ResourcesMap: map[string]*schema.Resource{
 			"mysql_database":      resourceDatabase(),
 			"mysql_grant":         resourceGrant(),
