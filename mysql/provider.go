@@ -26,9 +26,10 @@ const (
 )
 
 type MySQLConfiguration struct {
-	Config          *mysql.Config
-	MaxConnLifetime time.Duration
-	MaxOpenConns    int
+	Config                 *mysql.Config
+	MaxConnLifetime        time.Duration
+	MaxOpenConns           int
+	ConnectRetryTimeoutSec time.Duration
 }
 
 func Provider() terraform.ResourceProvider {
@@ -97,6 +98,12 @@ func Provider() terraform.ResourceProvider {
 				Default:      nativePasswords,
 				ValidateFunc: validation.StringInSlice([]string{cleartextPasswords, nativePasswords}, true),
 			},
+
+			"connect_retry_timeout_sec": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  300,
+			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -140,9 +147,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	})
 
 	return &MySQLConfiguration{
-		Config:          &conf,
-		MaxConnLifetime: time.Duration(d.Get("max_conn_lifetime_sec").(int)) * time.Second,
-		MaxOpenConns:    d.Get("max_open_conns").(int),
+		Config:                 &conf,
+		MaxConnLifetime:        time.Duration(d.Get("max_conn_lifetime_sec").(int)) * time.Second,
+		MaxOpenConns:           d.Get("max_open_conns").(int),
+		ConnectRetryTimeoutSec: time.Duration(d.Get("connect_retry_timeout_sec").(int)) * time.Second,
 	}, nil
 }
 
@@ -202,7 +210,7 @@ func connectToMySQL(conf *MySQLConfiguration) (*sql.DB, error) {
 	// when Terraform thinks it's available and when it is actually available.
 	// This is particularly acute when provisioning a server and then immediately
 	// trying to provision a database on it.
-	retryError := resource.Retry(5*time.Minute, func() *resource.RetryError {
+	retryError := resource.Retry(conf.ConnectRetryTimeoutSec, func() *resource.RetryError {
 		db, err = sql.Open("mysql", dsn)
 		if err != nil {
 			return resource.RetryableError(err)
