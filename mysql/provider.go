@@ -169,7 +169,7 @@ func makeDialer(d *schema.ResourceData) (proxy.Dialer, error) {
 		if err != nil {
 			return nil, err
 		}
-		proxy, err := proxy.FromURL(proxyURL, proxyFromEnv)
+		proxy, err := proxy.FromURL(proxyURL, proxy.Direct)
 		if err != nil {
 			return nil, err
 		}
