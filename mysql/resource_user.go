@@ -3,6 +3,7 @@ package mysql
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"errors"
 
@@ -16,6 +17,9 @@ func resourceUser() *schema.Resource {
 		Update: UpdateUser,
 		Read:   ReadUser,
 		Delete: DeleteUser,
+		Importer: &schema.ResourceImporter{
+			State: ImportUser,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"user": {
@@ -245,4 +249,38 @@ func DeleteUser(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 	}
 	return err
+}
+
+func ImportUser(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	userHost := strings.SplitN(d.Id(), "@", 2)
+
+	if len(userHost) != 2 {
+		return nil, fmt.Errorf("wrong ID format %s (expected USER@HOST)", d.Id())
+	}
+
+	user := userHost[0]
+	host := userHost[1]
+
+	db, err := connectToMySQL(meta.(*MySQLConfiguration))
+
+	if err != nil {
+		return nil, err
+	}
+
+	var count int
+	err = db.QueryRow("SELECT COUNT(1) FROM mysql.user WHERE user = ? AND host = ?", user, host).Scan(&count)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if count == 0 {
+		return nil, fmt.Errorf("user '%s' not found", d.Id())
+	}
+
+	d.Set("user", user)
+	d.Set("host", host)
+	d.Set("tls_option", "NONE")
+
+	return []*schema.ResourceData{d}, nil
 }
