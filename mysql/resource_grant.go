@@ -374,6 +374,7 @@ func restoreGrant(user string, host string, database string, table string, privs
 	d.Set("host", host)
 	d.Set("database", database)
 	d.Set("table", table)
+	d.Set("tls_option", "NONE")
 
 	priv_list := strings.Split(privsStr, ",")
 	privileges := make([]string, len(priv_list))
