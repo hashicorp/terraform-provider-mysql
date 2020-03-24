@@ -68,10 +68,7 @@ func resourceUser() *schema.Resource {
 }
 
 func CreateUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration))
-	if err != nil {
-		return err
-	}
+	db := meta.(*MySQLConfiguration).Db
 
 	var authStm string
 	var auth string
@@ -132,10 +129,7 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func UpdateUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration))
-	if err != nil {
-		return err
-	}
+	db := meta.(*MySQLConfiguration).Db
 
 	var auth string
 	if v, ok := d.GetOk("auth_plugin"); ok {
@@ -210,10 +204,7 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func ReadUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration))
-	if err != nil {
-		return err
-	}
+	db := meta.(*MySQLConfiguration).Db
 
 	stmtSQL := fmt.Sprintf("SELECT USER FROM mysql.user WHERE USER='%s'",
 		d.Get("user").(string))
@@ -233,10 +224,7 @@ func ReadUser(d *schema.ResourceData, meta interface{}) error {
 }
 
 func DeleteUser(d *schema.ResourceData, meta interface{}) error {
-	db, err := connectToMySQL(meta.(*MySQLConfiguration))
-	if err != nil {
-		return err
-	}
+	db := meta.(*MySQLConfiguration).Db
 
 	stmtSQL := fmt.Sprintf("DROP USER '%s'@'%s'",
 		d.Get("user").(string),
@@ -244,7 +232,7 @@ func DeleteUser(d *schema.ResourceData, meta interface{}) error {
 
 	log.Println("Executing statement:", stmtSQL)
 
-	_, err = db.Exec(stmtSQL)
+	_, err := db.Exec(stmtSQL)
 	if err == nil {
 		d.SetId("")
 	}
@@ -261,14 +249,10 @@ func ImportUser(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceDat
 	user := userHost[0]
 	host := userHost[1]
 
-	db, err := connectToMySQL(meta.(*MySQLConfiguration))
-
-	if err != nil {
-		return nil, err
-	}
+	db := meta.(*MySQLConfiguration).Db
 
 	var count int
-	err = db.QueryRow("SELECT COUNT(1) FROM mysql.user WHERE user = ? AND host = ?", user, host).Scan(&count)
+	err := db.QueryRow("SELECT COUNT(1) FROM mysql.user WHERE user = ? AND host = ?", user, host).Scan(&count)
 
 	if err != nil {
 		return nil, err
