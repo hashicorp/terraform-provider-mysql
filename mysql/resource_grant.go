@@ -13,6 +13,12 @@ import (
 
 const nonexistingGrantErrCode = 1141
 
+type MySQLGrant struct {
+	Database   string
+	Table      string
+	Privileges []string
+}
+
 func resourceGrant() *schema.Resource {
 	return &schema.Resource{
 		Create: CreateGrant,
@@ -316,7 +322,42 @@ func ImportGrant(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceDa
 
 	db := meta.(*MySQLConfiguration).Db
 
-	sql := fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'", user, host)
+	grants, err := showGrants(db, fmt.Sprintf("'%s'@'%s'", user, host))
+
+	if err != nil {
+		return nil, err
+	}
+
+	results := []*schema.ResourceData{}
+
+	for _, grant := range grants {
+		results = append(results, restoreGrant(user, host, grant))
+	}
+
+	return results, nil
+}
+
+func restoreGrant(user string, host string, grant *MySQLGrant) *schema.ResourceData {
+	d := resourceGrant().Data(nil)
+
+	database := grant.Database
+	id := fmt.Sprintf("%s@%s:%s", user, host, formatDatabaseName(database))
+	d.SetId(id)
+
+	d.Set("user", user)
+	d.Set("host", host)
+	d.Set("database", database)
+	d.Set("table", grant.Table)
+	d.Set("tls_option", "NONE")
+	d.Set("privileges", grant.Privileges)
+
+	return d
+}
+
+func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
+	grants := []*MySQLGrant{}
+
+	sql := fmt.Sprintf("SHOW GRANTS FOR %s", user)
 	rows, err := db.Query(sql)
 
 	if err != nil {
@@ -325,52 +366,38 @@ func ImportGrant(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceDa
 
 	defer rows.Close()
 	re := regexp.MustCompile(`^GRANT (.+) ON (.+?)\.(.+?) TO`)
-	results := []*schema.ResourceData{}
 
 	for rows.Next() {
-		var grant string
+		var rawGrant string
 
-		err := rows.Scan(&grant)
+		err := rows.Scan(&rawGrant)
 
 		if err != nil {
 			return nil, err
 		}
 
-		m := re.FindStringSubmatch(grant)
+		m := re.FindStringSubmatch(rawGrant)
 
 		if len(m) != 4 {
-			return nil, fmt.Errorf("failed to parse grant statement: %s", grant)
+			return nil, fmt.Errorf("failed to parse grant statement: %s", rawGrant)
 		}
 
-		privs := m[1]
-		database := strings.Trim(m[2], "`")
-		table := strings.Trim(m[3], "`")
-		results = append(results, restoreGrant(user, host, database, table, privs))
+		privsStr := m[1]
+		priv_list := strings.Split(privsStr, ",")
+		privileges := make([]string, len(priv_list))
+
+		for i, priv := range priv_list {
+			privileges[i] = strings.TrimSpace(priv)
+		}
+
+		grant := &MySQLGrant{
+			Database:   strings.Trim(m[2], "`"),
+			Table:      strings.Trim(m[3], "`"),
+			Privileges: privileges,
+		}
+
+		grants = append(grants, grant)
 	}
 
-	return results, nil
-}
-
-func restoreGrant(user string, host string, database string, table string, privsStr string) *schema.ResourceData {
-	d := resourceGrant().Data(nil)
-
-	id := fmt.Sprintf("%s@%s:%s", user, host, formatDatabaseName(database))
-	d.SetId(id)
-
-	d.Set("user", user)
-	d.Set("host", host)
-	d.Set("database", database)
-	d.Set("table", table)
-	d.Set("tls_option", "NONE")
-
-	priv_list := strings.Split(privsStr, ",")
-	privileges := make([]string, len(priv_list))
-
-	for i, priv := range priv_list {
-		privileges[i] = strings.TrimSpace(priv)
-	}
-
-	d.Set("privileges", privileges)
-
-	return d
+	return grants, nil
 }
