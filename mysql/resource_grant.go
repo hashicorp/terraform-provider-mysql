@@ -241,15 +241,26 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	sql := fmt.Sprintf("SHOW GRANTS FOR %s", userOrRole)
+	grants, err := showGrants(db, userOrRole)
 
-	log.Println("[DEBUG] SQL:", sql)
-
-	_, err = db.Exec(sql)
 	if err != nil {
 		log.Printf("[WARN] GRANT not found for %s - removing from state", userOrRole)
 		d.SetId("")
+		return nil
 	}
+
+	database := d.Get("database").(string)
+	table := d.Get("table").(string)
+
+	var privileges []string
+
+	for _, grant := range grants {
+		if grant.Database == database && grant.Table == table {
+			privileges = grant.Privileges
+		}
+	}
+
+	d.Set("privileges", privileges)
 
 	return nil
 }
