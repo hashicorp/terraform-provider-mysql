@@ -17,6 +17,7 @@ type MySQLGrant struct {
 	Database   string
 	Table      string
 	Privileges []string
+	Grant      bool
 }
 
 func resourceGrant() *schema.Resource {
@@ -253,14 +254,20 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 	table := d.Get("table").(string)
 
 	var privileges []string
+	var grantOption bool
 
 	for _, grant := range grants {
 		if grant.Database == database && grant.Table == table {
 			privileges = grant.Privileges
 		}
+
+		if grant.Grant {
+			grantOption = true
+		}
 	}
 
 	d.Set("privileges", privileges)
+	d.Set("grant", grantOption)
 
 	return nil
 }
@@ -359,6 +366,7 @@ func restoreGrant(user string, host string, grant *MySQLGrant) *schema.ResourceD
 	d.Set("host", host)
 	d.Set("database", database)
 	d.Set("table", grant.Table)
+	d.Set("grant", grant.Grant)
 	d.Set("tls_option", "NONE")
 	d.Set("privileges", grant.Privileges)
 
@@ -377,6 +385,7 @@ func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
 
 	defer rows.Close()
 	re := regexp.MustCompile(`^GRANT (.+) ON (.+?)\.(.+?) TO`)
+	reGrant := regexp.MustCompile(`\bGRANT OPTION\b`)
 
 	for rows.Next() {
 		var rawGrant string
@@ -405,6 +414,7 @@ func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
 			Database:   strings.Trim(m[2], "`"),
 			Table:      strings.Trim(m[3], "`"),
 			Privileges: privileges,
+			Grant:      reGrant.MatchString(rawGrant),
 		}
 
 		grants = append(grants, grant)
