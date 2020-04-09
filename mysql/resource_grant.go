@@ -23,7 +23,7 @@ type MySQLGrant struct {
 func resourceGrant() *schema.Resource {
 	return &schema.Resource{
 		Create: CreateGrant,
-		Update: nil,
+		Update: UpdateGrant,
 		Read:   ReadGrant,
 		Delete: DeleteGrant,
 		Importer: &schema.ResourceImporter{
@@ -69,7 +69,6 @@ func resourceGrant() *schema.Resource {
 			"privileges": {
 				Type:     schema.TypeSet,
 				Optional: true,
-				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
 			},
@@ -268,6 +267,16 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("privileges", privileges)
 	d.Set("grant", grantOption)
+
+	return nil
+}
+
+func UpdateGrant(d *schema.ResourceData, meta interface{}) error {
+	if d.HasChange("privileges") {
+		oldPrivs, newPrivs := d.GetChange("plaintext_password")
+		log.Printf("xxx old: %v\n", oldPrivs)
+		log.Printf("xxx new: %v\n", newPrivs)
+	}
 
 	return nil
 }
