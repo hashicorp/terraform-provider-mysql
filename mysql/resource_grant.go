@@ -23,7 +23,7 @@ type MySQLGrant struct {
 func resourceGrant() *schema.Resource {
 	return &schema.Resource{
 		Create: CreateGrant,
-		Update: nil,
+		Update: UpdateGrant,
 		Read:   ReadGrant,
 		Delete: DeleteGrant,
 		Importer: &schema.ResourceImporter{
@@ -69,7 +69,6 @@ func resourceGrant() *schema.Resource {
 			"privileges": {
 				Type:     schema.TypeSet,
 				Optional: true,
-				ForceNew: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
 			},
@@ -268,6 +267,81 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("privileges", privileges)
 	d.Set("grant", grantOption)
+
+	return nil
+}
+
+func UpdateGrant(d *schema.ResourceData, meta interface{}) error {
+	db := meta.(*MySQLConfiguration).Db
+
+	hasRoles, err := supportsRoles(db)
+
+	if err != nil {
+		return err
+	}
+
+	userOrRole, _, err := userOrRole(
+		d.Get("user").(string),
+		d.Get("host").(string),
+		d.Get("role").(string),
+		hasRoles)
+
+	if err != nil {
+		return err
+	}
+
+	database := d.Get("database").(string)
+	table := d.Get("table").(string)
+
+	if d.HasChange("privileges") {
+		err = updatePrivileges(d, db, userOrRole, database, table)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func updatePrivileges(d *schema.ResourceData, db *sql.DB, user string, database string, table string) error {
+	oldPrivsIf, newPrivsIf := d.GetChange("privileges")
+	oldPrivs := oldPrivsIf.(*schema.Set)
+	newPrivs := newPrivsIf.(*schema.Set)
+	grantIfs := newPrivs.Difference(oldPrivs).List()
+	revokeIfs := oldPrivs.Difference(newPrivs).List()
+
+	if len(grantIfs) > 0 {
+		grants := make([]string, len(grantIfs))
+
+		for i, v := range grantIfs {
+			grants[i] = v.(string)
+		}
+
+		sql := fmt.Sprintf("GRANT %s ON %s.%s TO %s", strings.Join(grants, ","), database, table, user)
+
+		log.Printf("[DEBUG] SQL: %s", sql)
+
+		if _, err := db.Exec(sql); err != nil {
+			return err
+		}
+	}
+
+	if len(revokeIfs) > 0 {
+		revokes := make([]string, len(revokeIfs))
+
+		for i, v := range revokeIfs {
+			revokes[i] = v.(string)
+		}
+
+		sql := fmt.Sprintf("REVOKE %s ON %s.%s FROM %s", strings.Join(revokes, ","), database, table, user)
+
+		log.Printf("[DEBUG] SQL: %s", sql)
+
+		if _, err := db.Exec(sql); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
