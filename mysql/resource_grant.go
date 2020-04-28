@@ -485,7 +485,7 @@ func showGrants(db *sql.DB, user string) ([]*MySQLGrant, error) {
 		}
 
 		grant := &MySQLGrant{
-			Database:   strings.Trim(m[2], "`"),
+			Database:   strings.ReplaceAll(m[2], "`", ""),
 			Table:      strings.Trim(m[3], "`"),
 			Privileges: privileges,
 			Grant:      reGrant.MatchString(rawGrant),
