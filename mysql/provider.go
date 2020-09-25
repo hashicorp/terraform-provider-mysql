@@ -117,6 +117,7 @@ func Provider() terraform.ResourceProvider {
 			"mysql_role":          resourceRole(),
 			"mysql_user":          resourceUser(),
 			"mysql_user_password": resourceUserPassword(),
+			"mysql_sql":           resourceSql(),
 		},
 
 		ConfigureFunc: providerConfigure,
