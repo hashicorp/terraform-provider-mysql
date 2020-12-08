@@ -52,9 +52,9 @@ resource "aws_db_instance" "default" {
 # Configure the MySQL provider based on the outcome of
 # creating the aws_db_instance.
 provider "mysql" {
-  endpoint = "${aws_db_instance.default.endpoint}"
-  username = "${aws_db_instance.default.username}"
-  password = "${aws_db_instance.default.password}"
+  endpoint = aws_db_instance.default.endpoint
+  username = aws_db_instance.default.username
+  password = aws_db_instance.default.password
 }
 
 # Create a second database, in addition to the "initial_db" created
