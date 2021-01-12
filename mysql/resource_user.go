@@ -6,7 +6,6 @@ import (
 
 	"errors"
 
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -105,13 +104,12 @@ func CreateUser(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL = stmtSQL + fmt.Sprintf(" IDENTIFIED BY '%s'", password)
 	}
 
-	requiredVersion, _ := version.NewVersion("5.7.0")
 	currentVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
 
-	if currentVersion.GreaterThan(requiredVersion) && d.Get("tls_option").(string) != "" {
+	if currentVersion.supportsTlsOption() && d.Get("tls_option").(string) != "" {
 		stmtSQL += fmt.Sprintf(" REQUIRE %s", d.Get("tls_option").(string))
 	}
 
@@ -155,20 +153,18 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 	if newpw != nil {
 		var stmtSQL string
 
-		/* ALTER USER syntax introduced in MySQL 5.7.6 deprecates SET PASSWORD (GH-8230) */
 		serverVersion, err := serverVersion(db)
 		if err != nil {
 			return fmt.Errorf("Could not determine server version: %s", err)
 		}
 
-		ver, _ := version.NewVersion("5.7.6")
-		if serverVersion.LessThan(ver) {
-			stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
+		if serverVersion.deprecatedSetPassword() {
+			stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' IDENTIFIED BY '%s'",
 				d.Get("user").(string),
 				d.Get("host").(string),
 				newpw.(string))
 		} else {
-			stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s' IDENTIFIED BY '%s'",
+			stmtSQL = fmt.Sprintf("SET PASSWORD FOR '%s'@'%s' = PASSWORD('%s')",
 				d.Get("user").(string),
 				d.Get("host").(string),
 				newpw.(string))
@@ -181,13 +177,12 @@ func UpdateUser(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	requiredVersion, _ := version.NewVersion("5.7.0")
 	currentVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
 
-	if d.HasChange("tls_option") && currentVersion.GreaterThan(requiredVersion) {
+	if currentVersion.supportsTlsOption() && d.HasChange("tls_option") {
 		var stmtSQL string
 
 		stmtSQL = fmt.Sprintf("ALTER USER '%s'@'%s'  REQUIRE %s",

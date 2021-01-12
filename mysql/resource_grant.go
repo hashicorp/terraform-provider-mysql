@@ -1,12 +1,10 @@
 package mysql
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
 
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -127,27 +125,17 @@ func userOrRole(user string, host string, role string, hasRoles bool) (string, b
 	}
 }
 
-func supportsRoles(db *sql.DB) (bool, error) {
-	currentVersion, err := serverVersion(db)
-	if err != nil {
-		return false, err
-	}
-
-	requiredVersion, _ := version.NewVersion("8.0.0")
-	hasRoles := currentVersion.GreaterThan(requiredVersion)
-	return hasRoles, nil
-}
-
 func CreateGrant(d *schema.ResourceData, meta interface{}) error {
 	db, err := connectToMySQL(meta.(*MySQLConfiguration))
 	if err != nil {
 		return err
 	}
 
-	hasRoles, err := supportsRoles(db)
+	serverVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
+	hasRoles := serverVersion.supportsRoles()
 
 	var (
 		privilegesOrRoles string
@@ -223,10 +211,11 @@ func ReadGrant(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	hasRoles, err := supportsRoles(db)
+	serverVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
+	hasRoles := serverVersion.supportsRoles()
 
 	userOrRole, _, err := userOrRole(
 		d.Get("user").(string),
@@ -260,10 +249,11 @@ func DeleteGrant(d *schema.ResourceData, meta interface{}) error {
 
 	table := formatTableName(d.Get("table").(string))
 
-	hasRoles, err := supportsRoles(db)
+	serverVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
+	hasRoles := serverVersion.supportsRoles()
 
 	userOrRole, isRole, err := userOrRole(
 		d.Get("user").(string),

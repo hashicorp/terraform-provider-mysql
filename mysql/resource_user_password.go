@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofrs/uuid"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/encryption"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -67,14 +66,13 @@ func SetUserPassword(d *schema.ResourceData, meta interface{}) error {
 	d.Set("key_fingerprint", fingerprint)
 	d.Set("encrypted_password", encrypted)
 
-	requiredVersion, _ := version.NewVersion("8.0.0")
 	currentVersion, err := serverVersion(db)
 	if err != nil {
 		return err
 	}
 
 	passSQL := fmt.Sprintf("'%s'", password)
-	if currentVersion.LessThan(requiredVersion) {
+	if currentVersion.requiresExplicitPassword() {
 		passSQL = fmt.Sprintf("PASSWORD(%s)", passSQL)
 	}
 

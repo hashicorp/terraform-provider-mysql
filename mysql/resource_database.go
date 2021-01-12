@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -119,20 +118,13 @@ func ReadDatabase(d *schema.ResourceData, meta interface{}) error {
 		stmtSQL := "SHOW COLLATION WHERE `Charset` = ? AND `Default` = 'Yes'"
 		var empty interface{}
 
-		requiredVersion, _ := version.NewVersion("8.0.0")
 		currentVersion, err := serverVersion(db)
 		if err != nil {
 			return err
 		}
 
-		serverVersionString, err := serverVersionString(db)
-		if err != nil {
-			return err
-		}
-
-		// MySQL 8 returns more data in a row.
 		var res error
-		if !strings.Contains(serverVersionString, "MariaDB") && currentVersion.GreaterThan(requiredVersion) {
+		if currentVersion.extraColumnInShowCollation() {
 			res = db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty, &empty)
 		} else {
 			res = db.QueryRow(stmtSQL, defaultCharset).Scan(&defaultCollation, &empty, &empty, &empty, &empty, &empty)
